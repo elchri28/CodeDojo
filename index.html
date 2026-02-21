@@ -1,0 +1,3002 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeDojo — IDE Interattivo</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;0,800;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #0f0f18;
+  --card: #14141f;
+  --card2: #1a1a28;
+  --border: #252535;
+  --border2: #2e2e45;
+  --accent: #00ff88;
+  --accent2: #7c3aed;
+  --accent3: #f59e0b;
+  --accent4: #38bdf8;
+  --text: #e8e8f0;
+  --muted: #6b6b88;
+  --muted2: #4a4a60;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warn: #fbbf24;
+  --py: #3b82f6;
+  --js: #eab308;
+  --html: #f97316;
+  --css: #8b5cf6;
+  --cpp: #ec4899;
+  --java: #ef4444;
+  --sql: #06b6d4;
+  --bash: #10b981;
+  --php: #a78bfa;
+  --rust: #fb923c;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Syne',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:default;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:.5;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted2);}
+
+/* ─── NAV ─── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 2.5rem;
+  background:rgba(10,10,15,.9);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:800;font-size:1.3rem;
+  color:var(--accent);letter-spacing:-1px;
+  display:flex;align-items:center;gap:.5rem;cursor:pointer;
+}
+.logo span{color:var(--text);}
+.logo-pulse{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.4);}50%{opacity:.6;box-shadow:0 0 0 6px rgba(0,255,136,0);}}
+.nav-tabs{display:flex;gap:0;}
+.nav-tab{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  padding:.6rem 1.2rem;color:var(--muted);
+  cursor:pointer;border:1px solid transparent;
+  transition:all .2s;text-transform:uppercase;letter-spacing:1px;
+}
+.nav-tab:hover{color:var(--text);background:var(--card);}
+.nav-tab.active{color:var(--accent);border-bottom:2px solid var(--accent);}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.xp-pill{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);
+  color:var(--accent);padding:.35rem .9rem;letter-spacing:1px;
+}
+.level-pill{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);
+  color:#c084fc;padding:.35rem .9rem;
+}
+
+/* ─── PAGES ─── */
+.page{display:none;min-height:calc(100vh - 56px);margin-top:56px;}
+.page.active{display:block;}
+
+/* ═══════════════════════════════════════════
+   HERO PAGE
+══════════════════════════════════════════ */
+.hero{
+  min-height:calc(100vh - 56px);
+  display:flex;align-items:center;justify-content:center;
+  padding:4rem 3rem;position:relative;overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,255,136,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,136,.04) 1px,transparent 1px);
+  background-size:50px 50px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent);
+}
+.hero-orb{
+  position:absolute;width:700px;height:700px;
+  background:radial-gradient(circle,rgba(0,255,136,.06) 0%,rgba(124,58,237,.04) 50%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:orbFloat 8s ease-in-out infinite;
+}
+@keyframes orbFloat{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-52%) scale(1.05);}}
+.hero-content{position:relative;text-align:center;max-width:950px;}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  color:var(--accent);border:1px solid rgba(0,255,136,.25);
+  padding:.45rem 1.2rem;margin-bottom:2.5rem;
+  animation:fadeUp .7s ease both;
+}
+.badge-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.hero-title{
+  font-size:clamp(3.5rem,9vw,8rem);font-weight:800;
+  line-height:.88;letter-spacing:-4px;
+  margin-bottom:2rem;
+}
+.hero-title .t1{display:block;color:var(--text);animation:fadeUp .7s ease .15s both;}
+.hero-title .t2{
+  display:block;color:transparent;
+  -webkit-text-stroke:2px var(--accent);
+  font-style:italic;
+  animation:fadeUp .7s ease .25s both;
+}
+.hero-title .t3{display:block;color:var(--accent);animation:fadeUp .7s ease .35s both;}
+.hero-sub{
+  font-family:'JetBrains Mono',monospace;font-size:.9rem;
+  color:var(--muted);line-height:1.9;
+  max-width:580px;margin:0 auto 3rem;
+  animation:fadeUp .7s ease .45s both;
+}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeUp .7s ease .55s both;}
+.btn-hero{
+  font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:700;
+  background:var(--accent);color:var(--bg);
+  padding:1rem 2.8rem;border:none;cursor:pointer;
+  text-transform:uppercase;letter-spacing:2px;
+  transition:all .2s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+}
+.btn-hero:hover{background:#00e87a;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,255,136,.25);}
+.btn-hero2{
+  font-family:'JetBrains Mono',monospace;font-size:.85rem;
+  color:var(--text);padding:1rem 2.8rem;
+  border:1px solid var(--border2);background:transparent;cursor:pointer;
+  letter-spacing:1px;transition:all .2s;
+}
+.btn-hero2:hover{border-color:var(--accent4);color:var(--accent4);}
+.hero-langs{
+  display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;
+  margin-top:4rem;animation:fadeUp .7s ease .65s both;
+}
+.lang-chip{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;
+  padding:.3rem .8rem;border:1px solid var(--border);
+  color:var(--muted);transition:all .2s;cursor:default;
+}
+.lang-chip:hover{border-color:currentColor;}
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.stat-cell{
+  padding:1.8rem 2rem;text-align:center;
+  border-right:1px solid var(--border);transition:background .2s;
+}
+.stat-cell:last-child{border-right:none;}
+.stat-cell:hover{background:var(--card);}
+.stat-n{
+  font-family:'JetBrains Mono',monospace;
+  font-size:2rem;font-weight:800;color:var(--accent);
+  display:block;line-height:1;margin-bottom:.4rem;
+}
+.stat-l{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+
+/* ═══════════════════════════════════════════
+   IDE PAGE
+══════════════════════════════════════════ */
+.ide-layout{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  height:calc(100vh - 56px);
+  overflow:hidden;
+}
+/* sidebar */
+.ide-sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-header{
+  padding:1rem 1.2rem;
+  border-bottom:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:2px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.lang-list{overflow-y:auto;flex:1;}
+.lang-group-title{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  color:var(--muted2);text-transform:uppercase;letter-spacing:2px;
+  padding:.7rem 1.2rem .4rem;
+}
+.lang-item{
+  display:flex;align-items:center;gap:.8rem;
+  padding:.7rem 1.2rem;cursor:pointer;
+  transition:background .15s;
+  border-left:2px solid transparent;
+}
+.lang-item:hover{background:var(--card);}
+.lang-item.active{background:var(--card2);border-left-color:var(--lang-c);}
+.lang-dot{width:8px;height:8px;border-radius:50%;background:var(--lang-c);flex-shrink:0;}
+.lang-name{font-family:'JetBrains Mono',monospace;font-size:.78rem;flex:1;}
+.lang-badge{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  padding:.1rem .4rem;border:1px solid var(--border);
+  color:var(--muted);text-transform:uppercase;
+}
+/* editor main */
+.ide-main{display:flex;flex-direction:column;overflow:hidden;}
+.ide-topbar{
+  display:flex;align-items:center;gap:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0;flex-shrink:0;
+}
+.ide-tab{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;
+  padding:.7rem 1.4rem;color:var(--muted);
+  cursor:pointer;border-right:1px solid var(--border);
+  transition:all .2s;white-space:nowrap;
+  display:flex;align-items:center;gap:.5rem;
+  border-bottom:2px solid transparent;
+}
+.ide-tab:hover{background:var(--card);color:var(--text);}
+.ide-tab.active{background:var(--card);color:var(--text);border-bottom-color:var(--accent);}
+.ide-tab .tab-dot{width:6px;height:6px;border-radius:50%;}
+.ide-tab .tab-close{
+  width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+  border-radius:2px;font-size:.6rem;color:var(--muted);
+  transition:all .15s;margin-left:.3rem;
+}
+.ide-tab .tab-close:hover{background:rgba(248,113,113,.15);color:var(--danger);}
+.ide-toolbar{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.5rem 1rem;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.tool-btn{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  padding:.4rem .9rem;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:.4rem;
+}
+.tool-btn:hover{border-color:var(--border2);color:var(--text);}
+.run-btn-main{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;
+  padding:.4rem 1.2rem;
+  background:var(--accent);color:var(--bg);
+  border:none;cursor:pointer;
+  text-transform:uppercase;letter-spacing:1px;
+  transition:all .15s;display:flex;align-items:center;gap:.4rem;
+}
+.run-btn-main:hover{background:#00e87a;transform:scale(1.02);}
+.run-btn-main:active{transform:scale(.98);}
+.lang-indicator{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;
+  padding:.25rem .7rem;border:1px solid var(--border);
+  color:var(--lang-c,var(--muted));
+  display:flex;align-items:center;gap:.5rem;
+}
+/* split pane */
+.editor-split{
+  flex:1;display:grid;
+  grid-template-rows:1fr auto;
+  overflow:hidden;
+}
+.editor-pane{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+.code-col{
+  display:flex;overflow:hidden;
+  border-right:1px solid var(--border);
+  position:relative;
+}
+.gutter{
+  flex-shrink:0;width:46px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:1rem 0;
+  font-family:'JetBrains Mono',monospace;font-size:.76rem;
+  color:var(--muted2);text-align:right;
+  overflow:hidden;user-select:none;line-height:1.6;
+}
+.gutter span{display:block;padding-right:10px;}
+.code-editor{
+  flex:1;padding:1rem 1rem 1rem .8rem;
+  font-family:'JetBrains Mono',monospace;font-size:.83rem;
+  color:var(--text);background:transparent;
+  border:none;outline:none;resize:none;
+  line-height:1.6;caret-color:var(--accent);
+  tab-size:2;overflow-y:auto;
+  white-space:pre;overflow-x:auto;
+}
+/* output / preview col */
+.out-col{display:flex;flex-direction:column;overflow:hidden;}
+.out-header{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.5rem 1rem;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.out-tab{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;
+  padding:.3rem .8rem;cursor:pointer;color:var(--muted);
+  transition:all .15s;border:1px solid transparent;
+}
+.out-tab:hover{color:var(--text);}
+.out-tab.active{color:var(--accent);border-color:rgba(0,255,136,.2);background:rgba(0,255,136,.04);}
+.out-body{flex:1;overflow:hidden;position:relative;}
+.console{
+  height:100%;padding:1rem 1.2rem;
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  line-height:1.9;overflow-y:auto;
+}
+.preview-frame{
+  width:100%;height:100%;border:none;
+  background:#fff;display:none;
+}
+.preview-frame.show{display:block;}
+.console.hidden{display:none;}
+/* status bar */
+.status-bar{
+  display:flex;align-items:center;gap:1.5rem;
+  padding:.35rem 1.2rem;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  color:var(--muted);
+}
+.status-item{display:flex;align-items:center;gap:.4rem;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--success);}
+.status-item.warn .status-dot{background:var(--warn);}
+.status-item.err .status-dot{background:var(--danger);}
+.cl-success{color:var(--success);}
+.cl-error{color:var(--danger);}
+.cl-warn{color:var(--warn);}
+.cl-info{color:var(--accent4);}
+.cl-muted{color:var(--muted);}
+.cl-accent{color:var(--accent);}
+.cl-normal{color:var(--text);}
+.cursor-blink{
+  display:inline-block;width:7px;height:14px;
+  background:var(--accent);vertical-align:text-bottom;
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* ═══════════════════════════════════════════
+   CURRICULUM PAGE
+══════════════════════════════════════════ */
+.curriculum-layout{
+  display:grid;grid-template-columns:280px 1fr;
+  min-height:calc(100vh - 56px);
+}
+.cur-sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:2rem 0;
+  position:sticky;top:56px;height:calc(100vh - 56px);
+  overflow-y:auto;
+}
+.cur-sidebar-title{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  text-transform:uppercase;letter-spacing:2px;color:var(--muted);
+  padding:.5rem 1.5rem 1rem;
+}
+.cur-track{
+  padding:.7rem 1.5rem;cursor:pointer;
+  border-left:3px solid transparent;transition:all .15s;
+  display:flex;align-items:center;gap:.8rem;
+}
+.cur-track:hover{background:var(--card);}
+.cur-track.active{background:var(--card2);border-left-color:var(--tc);}
+.cur-track-icon{font-size:1.1rem;flex-shrink:0;}
+.cur-track-info{flex:1;min-width:0;}
+.cur-track-name{font-weight:700;font-size:.85rem;margin-bottom:.2rem;}
+.cur-track-meta{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  color:var(--muted);
+}
+.cur-track-prog{
+  margin-top:.4rem;height:2px;background:var(--border);overflow:hidden;
+}
+.cur-track-prog-fill{height:100%;background:var(--tc);transition:width 1s ease;}
+/* main content */
+.cur-main{padding:3rem;}
+.cur-header{margin-bottom:3rem;}
+.cur-lang-badge{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  padding:.4rem 1rem;border:1px solid var(--border2);
+  color:var(--tc,var(--muted));
+  margin-bottom:1rem;
+  background:rgba(var(--tca,0,255,136),.04);
+}
+.cur-title{font-size:3rem;font-weight:800;letter-spacing:-2px;margin-bottom:.8rem;}
+.cur-desc{
+  font-family:'JetBrains Mono',monospace;font-size:.82rem;
+  color:var(--muted);line-height:1.9;max-width:700px;
+}
+.cur-progress-bar{
+  margin:2rem 0;height:6px;background:var(--border);
+  border-radius:0;overflow:hidden;position:relative;
+}
+.cur-progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--tc),var(--accent));
+  transition:width 1.2s ease;
+}
+.lessons-grid{display:flex;flex-direction:column;gap:0;}
+.lesson-card{
+  display:grid;grid-template-columns:60px 1fr auto;
+  gap:1.5rem;align-items:center;
+  padding:1.5rem 2rem;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s;
+  position:relative;overflow:hidden;
+}
+.lesson-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--tc,var(--accent));
+  transform:scaleY(0);transform-origin:top;transition:transform .2s;
+}
+.lesson-card:hover{background:var(--card);}
+.lesson-card:hover::before{transform:scaleY(1);}
+.lesson-card.locked{opacity:.5;cursor:not-allowed;}
+.lesson-card.locked::before{display:none;}
+.lesson-card.done{background:rgba(74,222,128,.02);}
+.lesson-n{
+  font-family:'JetBrains Mono',monospace;
+  font-size:1.6rem;font-weight:800;
+  color:var(--border2);line-height:1;
+}
+.lesson-card.done .lesson-n{color:var(--tc,var(--accent));}
+.lesson-card.active-l .lesson-n{color:var(--accent3);}
+.lesson-body{}
+.lesson-title{font-size:.95rem;font-weight:700;margin-bottom:.3rem;}
+.lesson-desc{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);line-height:1.6;}
+.lesson-tags{display:flex;gap:.5rem;margin-top:.5rem;}
+.lesson-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  padding:.15rem .5rem;border:1px solid var(--border);
+  color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+}
+.lesson-status{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  padding:.3rem .7rem;border:1px solid;white-space:nowrap;
+  text-transform:uppercase;letter-spacing:1px;
+}
+.lesson-status.done{color:var(--success);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.05);}
+.lesson-status.current{color:var(--accent3);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.05);}
+.lesson-status.locked{color:var(--muted2);border-color:var(--border);}
+.lesson-status.open{color:var(--accent4);border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.05);}
+
+/* ═══════════════════════════════════════════
+   QUIZ PAGE
+══════════════════════════════════════════ */
+.quiz-page-layout{max-width:800px;margin:0 auto;padding:3rem 2rem;}
+.quiz-page-header{margin-bottom:3rem;}
+.quiz-progress-outer{
+  display:flex;gap:4px;margin-bottom:2.5rem;
+}
+.qprog-seg{
+  flex:1;height:4px;background:var(--border);
+  transition:background .3s;
+}
+.qprog-seg.done{background:var(--success);}
+.qprog-seg.current{background:var(--accent3);}
+.quiz-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:3rem;position:relative;overflow:hidden;
+}
+.quiz-card::after{
+  content:attr(data-n);
+  position:absolute;right:2rem;top:50%;transform:translateY(-50%);
+  font-size:10rem;font-weight:800;color:rgba(0,255,136,.03);
+  pointer-events:none;font-family:'Syne',sans-serif;
+}
+.quiz-num{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:1.5rem;
+}
+.quiz-q{font-size:1.4rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.8rem;line-height:1.3;}
+.quiz-code{
+  background:var(--surface);border:1px solid var(--border);
+  padding:1rem 1.2rem;margin:1rem 0;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  color:var(--text);line-height:1.8;overflow-x:auto;
+  white-space:pre;
+}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.5rem;}
+.quiz-opt{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  padding:.9rem 1.2rem;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);cursor:pointer;
+  text-align:left;transition:all .2s;display:flex;align-items:flex-start;gap:.8rem;
+}
+.quiz-opt:hover:not(:disabled){border-color:var(--accent2);background:rgba(124,58,237,.05);}
+.quiz-opt:disabled{cursor:not-allowed;}
+.quiz-opt.correct{border-color:var(--success);background:rgba(74,222,128,.06);color:var(--success);}
+.quiz-opt.wrong{border-color:var(--danger);background:rgba(248,113,113,.06);color:var(--danger);}
+.opt-key{
+  width:22px;height:22px;border:1px solid currentColor;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.quiz-fb{
+  margin-top:1.5rem;padding:1rem 1.5rem;
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;
+  border-left:3px solid var(--border);background:rgba(255,255,255,.02);
+  display:none;
+}
+.quiz-fb.show{display:block;}
+.quiz-fb.ok{border-color:var(--success);color:var(--text);}
+.quiz-fb.ko{border-color:var(--danger);color:var(--text);}
+.quiz-actions{display:flex;align-items:center;gap:1rem;margin-top:2rem;}
+.quiz-next{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;
+  padding:.7rem 2rem;background:var(--accent);color:var(--bg);
+  border:none;cursor:pointer;text-transform:uppercase;letter-spacing:1px;
+  transition:all .2s;display:none;
+}
+.quiz-next:hover{background:#00e87a;}
+.quiz-score-display{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);
+}
+/* results */
+.quiz-result{
+  background:var(--card);border:1px solid var(--border);
+  padding:4rem;text-align:center;
+}
+.result-score{
+  font-size:6rem;font-weight:800;letter-spacing:-4px;
+  color:var(--accent);line-height:1;margin:1rem 0;
+}
+.result-label{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  color:var(--muted);margin-bottom:2rem;
+}
+.result-bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);margin-top:2rem;text-align:center;}
+.result-bar-cell{background:var(--card);padding:1.5rem 1rem;}
+.rbc-num{font-size:2rem;font-weight:800;letter-spacing:-1px;display:block;margin-bottom:.3rem;}
+.rbc-lbl{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+/* ─── MODAL LESSON ─── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(10,10,15,.95);
+  z-index:500;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(12px);
+}
+.modal-bg.open{display:flex;}
+.modal-box{
+  background:var(--card);border:1px solid var(--border);
+  width:90%;max-width:780px;max-height:85vh;overflow-y:auto;
+  padding:3rem;position:relative;
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-close{
+  position:absolute;top:1.2rem;right:1.2rem;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  color:var(--muted);background:none;border:1px solid var(--border);
+  padding:.3rem .7rem;cursor:pointer;transition:all .2s;
+}
+.modal-close:hover{color:var(--text);border-color:var(--muted);}
+.modal-badge{
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  color:var(--accent);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:.8rem;
+}
+.modal-title{font-size:2.2rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:1.5rem;line-height:1.1;}
+.modal-body{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  color:var(--muted);line-height:2;
+}
+.modal-body strong{color:var(--text);}
+.modal-body h3{
+  font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;
+  color:var(--text);margin:1.5rem 0 .5rem;
+}
+.modal-body p{margin-bottom:1rem;}
+.modal-body ul{padding-left:1.5rem;margin-bottom:1rem;}
+.modal-body li{margin-bottom:.4rem;}
+.code-block{
+  background:var(--surface);border:1px solid var(--border);
+  padding:1.2rem 1.5rem;margin:1rem 0;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  line-height:1.9;overflow-x:auto;white-space:pre;
+  position:relative;
+}
+.code-block .copy-btn{
+  position:absolute;top:.5rem;right:.5rem;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  padding:.2rem .5rem;border:1px solid var(--border);
+  background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.code-block .copy-btn:hover{color:var(--accent);border-color:var(--accent);}
+.kw{color:#c084fc;}
+.str{color:#86efac;}
+.num{color:var(--accent3);}
+.fn{color:#60a5fa;}
+.cm{color:var(--muted);}
+.tp{color:#f9a8d4;}
+.op{color:var(--accent);}
+.modal-try-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;
+  padding:.8rem 2rem;background:var(--accent);color:var(--bg);
+  border:none;cursor:pointer;text-transform:uppercase;letter-spacing:1px;
+  margin-top:2rem;transition:all .2s;
+}
+.modal-try-btn:hover{background:#00e87a;}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .ide-layout{grid-template-columns:1fr;}
+  .ide-sidebar{display:none;}
+  .editor-pane{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}
+  .code-col{border-right:none;border-bottom:1px solid var(--border);}
+  .curriculum-layout{grid-template-columns:1fr;}
+  .cur-sidebar{display:none;}
+  .quiz-opts{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .hero-title{letter-spacing:-2px;}
+}
+
+/* ─── TOOLTIP ─── */
+[data-tip]{position:relative;}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--card2);border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  color:var(--text);padding:.3rem .6rem;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;
+}
+[data-tip]:hover::after{opacity:1;}
+
+/* ─── NOTIFICATION ─── */
+.notif{
+  position:fixed;bottom:2rem;right:2rem;z-index:600;
+  background:var(--card2);border:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:.75rem;
+  padding:1rem 1.5rem;color:var(--text);
+  transform:translateY(100px);opacity:0;
+  transition:all .3s ease;max-width:320px;
+  display:flex;align-items:center;gap:.8rem;
+}
+.notif.show{transform:translateY(0);opacity:1;}
+.notif-icon{font-size:1rem;}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="logo" onclick="showPage('home')">
+    <div class="logo-pulse"></div>
+    Code<span>Dojo</span>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-page="home" onclick="showPage('home')">// Home</div>
+    <div class="nav-tab" data-page="ide" onclick="showPage('ide')">// IDE</div>
+    <div class="nav-tab" data-page="curriculum" onclick="showPage('curriculum')">// Curriculum</div>
+    <div class="nav-tab" data-page="quiz" onclick="showPage('quiz')">// Quiz</div>
+  </div>
+  <div class="nav-right">
+    <div class="xp-pill" id="navXp">⚡ 450 XP</div>
+    <div class="level-pill" id="navLvl">LVL 3</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     HOME PAGE
+══════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-orb"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        10 LINGUAGGI · IDE COMPLETO · 100+ LEZIONI
+      </div>
+      <h1 class="hero-title">
+        <span class="t1">SMETTI DI</span>
+        <span class="t2">GUARDARE,</span>
+        <span class="t3">PROGRAMMA.</span>
+      </h1>
+      <p class="hero-sub">IDE interattivo direttamente nel browser. Scrivi, esegui e vedi i risultati in tempo reale — inclusa l'anteprima HTML live. Zero installazioni.</p>
+      <div class="hero-btns">
+        <button class="btn-hero" onclick="showPage('ide')">▶ Apri IDE</button>
+        <button class="btn-hero2" onclick="showPage('curriculum')">Curriculum →</button>
+      </div>
+      <div class="hero-langs">
+        <span class="lang-chip" style="color:var(--py)">● Python</span>
+        <span class="lang-chip" style="color:var(--js)">● JavaScript</span>
+        <span class="lang-chip" style="color:var(--html)">● HTML</span>
+        <span class="lang-chip" style="color:var(--css)">● CSS</span>
+        <span class="lang-chip" style="color:var(--cpp)">● C++</span>
+        <span class="lang-chip" style="color:var(--java)">● Java</span>
+        <span class="lang-chip" style="color:var(--sql)">● SQL</span>
+        <span class="lang-chip" style="color:var(--bash)">● Bash</span>
+        <span class="lang-chip" style="color:var(--php)">● PHP</span>
+        <span class="lang-chip" style="color:var(--rust)">● Rust</span>
+      </div>
+    </div>
+  </section>
+  <div class="stats-row">
+    <div class="stat-cell"><span class="stat-n" id="sn1">0</span><span class="stat-l">Studenti Attivi</span></div>
+    <div class="stat-cell"><span class="stat-n" id="sn2">0</span><span class="stat-l">Lezioni Completate</span></div>
+    <div class="stat-cell"><span class="stat-n" id="sn3">0</span><span class="stat-l">Sfide Risolte</span></div>
+    <div class="stat-cell"><span class="stat-n" id="sn4">10</span><span class="stat-l">Linguaggi</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     IDE PAGE
+══════════════════════════════════════════ -->
+<div class="page" id="page-ide">
+  <div class="ide-layout">
+    <!-- SIDEBAR -->
+    <div class="ide-sidebar">
+      <div class="sidebar-header">
+        <span>Linguaggi</span>
+        <span style="font-size:.6rem;color:var(--muted2)">10 disponibili</span>
+      </div>
+      <div class="lang-list">
+        <div class="lang-group-title">// WEB</div>
+        <div class="lang-item active" style="--lang-c:var(--html)" onclick="switchLang('html',this)" data-lang="html">
+          <div class="lang-dot"></div>
+          <span class="lang-name">HTML + CSS</span>
+          <span class="lang-badge">preview</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--js)" onclick="switchLang('js',this)" data-lang="js">
+          <div class="lang-dot"></div>
+          <span class="lang-name">JavaScript</span>
+          <span class="lang-badge">es2024</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--php)" onclick="switchLang('php',this)" data-lang="php">
+          <div class="lang-dot"></div>
+          <span class="lang-name">PHP</span>
+          <span class="lang-badge">8.3</span>
+        </div>
+        <div class="lang-group-title">// GENERAL PURPOSE</div>
+        <div class="lang-item" style="--lang-c:var(--py)" onclick="switchLang('py',this)" data-lang="py">
+          <div class="lang-dot"></div>
+          <span class="lang-name">Python</span>
+          <span class="lang-badge">3.12</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--java)" onclick="switchLang('java',this)" data-lang="java">
+          <div class="lang-dot"></div>
+          <span class="lang-name">Java</span>
+          <span class="lang-badge">21</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--cpp)" onclick="switchLang('cpp',this)" data-lang="cpp">
+          <div class="lang-dot"></div>
+          <span class="lang-name">C++</span>
+          <span class="lang-badge">c++20</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--rust)" onclick="switchLang('rust',this)" data-lang="rust">
+          <div class="lang-dot"></div>
+          <span class="lang-name">Rust</span>
+          <span class="lang-badge">1.78</span>
+        </div>
+        <div class="lang-group-title">// DATABASE & SCRIPTING</div>
+        <div class="lang-item" style="--lang-c:var(--sql)" onclick="switchLang('sql',this)" data-lang="sql">
+          <div class="lang-dot"></div>
+          <span class="lang-name">SQL</span>
+          <span class="lang-badge">sqlite</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--bash)" onclick="switchLang('bash',this)" data-lang="bash">
+          <div class="lang-dot"></div>
+          <span class="lang-name">Bash</span>
+          <span class="lang-badge">5.2</span>
+        </div>
+        <div class="lang-item" style="--lang-c:var(--css)" onclick="switchLang('css',this)" data-lang="css">
+          <div class="lang-dot"></div>
+          <span class="lang-name">CSS Sandbox</span>
+          <span class="lang-badge">preview</span>
+        </div>
+      </div>
+    </div>
+    <!-- EDITOR MAIN -->
+    <div class="ide-main">
+      <div class="ide-topbar" id="ideTabs">
+        <div class="ide-tab active" id="mainTab">
+          <span class="tab-dot" id="tabDot" style="background:var(--html)"></span>
+          <span id="tabName">index.html</span>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;padding:0 1rem;gap:.8rem;">
+          <div class="lang-indicator" id="langIndicator">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--html);"></span>
+            <span id="langIndicatorTxt">HTML + CSS</span>
+          </div>
+        </div>
+      </div>
+      <div class="ide-toolbar">
+        <button class="run-btn-main" onclick="runCode()" id="runBtn">
+          <span>▶</span> RUN
+        </button>
+        <button class="tool-btn" onclick="clearCode()" data-tip="Pulisci editor">⊘ Clear</button>
+        <button class="tool-btn" onclick="copyCode()" data-tip="Copia codice">⎘ Copy</button>
+        <button class="tool-btn" onclick="resetCode()" data-tip="Ripristina esempio">↺ Reset</button>
+        <button class="tool-btn" id="wrapBtn" onclick="toggleWrap()" data-tip="Torna a capo">⇥ Wrap</button>
+        <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted)" id="cursorPos">1:1</div>
+      </div>
+      <div class="editor-split">
+        <div class="editor-pane">
+          <div class="code-col">
+            <div class="gutter" id="gutterEl"></div>
+            <textarea class="code-editor" id="codeEditor"
+              spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+              oninput="onCodeInput()" onkeydown="onKeyDown(event)" onkeyup="updateCursor(event)" onclick="updateCursor(event)"
+            ></textarea>
+          </div>
+          <div class="out-col">
+            <div class="out-header">
+              <div class="out-tab active" id="outTabConsole" onclick="switchOutTab('console')">// Console</div>
+              <div class="out-tab" id="outTabPreview" onclick="switchOutTab('preview')" id="previewTabBtn">// Preview</div>
+              <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted2)" id="runTime"></div>
+            </div>
+            <div class="out-body">
+              <div class="console" id="consoleOut">
+                <span class="cl-info">// Pronto. Premi RUN per eseguire il codice.</span><br>
+                <span class="cl-muted">// Seleziona un linguaggio dalla sidebar sinistra.</span><br>
+                <span class="cl-normal"><span class="cursor-blink"></span></span>
+              </div>
+              <iframe class="preview-frame" id="previewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+          </div>
+        </div>
+        <div class="status-bar">
+          <div class="status-item"><div class="status-dot"></div><span id="statusLang">HTML + CSS</span></div>
+          <div class="status-item"><span id="statusLines">1 righe</span></div>
+          <div class="status-item"><span id="statusChars">0 chars</span></div>
+          <div class="status-item" style="margin-left:auto;color:var(--muted2)">
+            <span>CodeDojo IDE v2.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CURRICULUM PAGE
+══════════════════════════════════════════ -->
+<div class="page" id="page-curriculum">
+  <div class="curriculum-layout">
+    <div class="cur-sidebar" id="curSidebar"></div>
+    <div class="cur-main" id="curMain"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     QUIZ PAGE
+══════════════════════════════════════════ -->
+<div class="page" id="page-quiz">
+  <div class="quiz-page-layout">
+    <div class="quiz-page-header">
+      <div class="section-num" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem">// QUIZ INTERATTIVO</div>
+      <h2 style="font-size:2.5rem;font-weight:800;letter-spacing:-2px;margin-bottom:.5rem">Metti alla prova le tue skill</h2>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted)">15 domande su Python, JavaScript, HTML, Algoritmi e Basi del Web.</p>
+    </div>
+    <div class="quiz-progress-outer" id="quizProgOuter"></div>
+    <div id="quizContainer"></div>
+  </div>
+</div>
+
+<!-- ─── MODAL LEZIONE ─── -->
+<div class="modal-bg" id="lessonModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('lessonModal').classList.remove('open')">ESC ×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- ─── NOTIFICATION ─── -->
+<div class="notif" id="notif">
+  <span class="notif-icon" id="notifIcon">✓</span>
+  <span id="notifMsg">Operazione completata</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  DATA: LINGUAGGI
+// ════════════════════════════════════════════
+const LANGS = {
+  html: {
+    name:'HTML + CSS', file:'index.html', color:'var(--html)',
+    preview:true,
+    code:`<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>La mia prima pagina</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f1a, #1a0a2e);
+      color: #e8e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+    .card {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      padding: 3rem;
+      border-radius: 4px;
+      text-align: center;
+      max-width: 500px;
+    }
+    h1 {
+      font-size: 3rem;
+      color: #00ff88;
+      margin-bottom: 1rem;
+    }
+    p { color: #888; line-height: 1.8; }
+    button {
+      margin-top: 1.5rem;
+      padding: .7rem 2rem;
+      background: #00ff88;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background: #00cc6f; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hello World! 🌍</h1>
+    <p>La mia prima pagina HTML con CSS integrato.</p>
+    <button onclick="this.textContent='Cliccato! 🎉'">Cliccami!</button>
+  </div>
+</body>
+</html>`
+  },
+  js: {
+    name:'JavaScript', file:'script.js', color:'var(--js)',
+    preview:false,
+    code:`// ─── JavaScript ES2024 ───────────────────
+
+// Variabili e tipi
+const nome = "Mario";
+let punteggio = 100;
+let attivo = true;
+
+console.log("Nome:", nome);
+console.log("Punteggio:", punteggio);
+
+// Funzioni con arrow syntax
+const saluta = (name) => \`Ciao, \${name}! 👋\`;
+console.log(saluta(nome));
+
+// Array e metodi
+const numeri = [1, 2, 3, 4, 5, 10, 15, 20];
+const pari = numeri.filter(n => n % 2 === 0);
+const quadrati = numeri.map(n => n * n);
+const somma = numeri.reduce((acc, n) => acc + n, 0);
+
+console.log("Pari:", pari.join(", "));
+console.log("Quadrati:", quadrati.join(", "));
+console.log("Somma totale:", somma);
+
+// Oggetti
+const persona = {
+  nome: "Luigi",
+  eta: 28,
+  saluta() {
+    return \`Sono \${this.nome}, ho \${this.eta} anni.\`;
+  }
+};
+console.log(persona.saluta());
+
+// Promise / async
+const attendi = (ms) => new Promise(r => setTimeout(r, ms));
+async function demo() {
+  console.log("Inizio operazione asincrona...");
+  await attendi(100);
+  console.log("Operazione completata! ✓");
+}
+demo();
+`
+  },
+  py: {
+    name:'Python', file:'main.py', color:'var(--py)',
+    preview:false,
+    code:`# ─── Python 3.12 ─────────────────────────
+
+# Variabili e tipi
+nome = "Mario"
+eta = 25
+altezza = 1.78
+attivo = True
+
+print(f"Nome: {nome}, Età: {eta}, Altezza: {altezza}m")
+
+# Liste e comprensioni
+numeri = [1, 2, 3, 4, 5, 10, 15, 20]
+pari = [n for n in numeri if n % 2 == 0]
+quadrati = [n**2 for n in numeri]
+
+print(f"Pari: {pari}")
+print(f"Quadrati: {quadrati}")
+print(f"Somma: {sum(numeri)}")
+
+# Funzioni
+def fattoriale(n):
+    if n <= 1:
+        return 1
+    return n * fattoriale(n - 1)
+
+for i in range(1, 8):
+    print(f"{i}! = {fattoriale(i)}")
+
+# Dizionari
+persona = {"nome": "Luigi", "eta": 28, "citta": "Roma"}
+for chiave, valore in persona.items():
+    print(f"  {chiave}: {valore}")
+
+# Classi
+class Animale:
+    def __init__(self, nome, verso):
+        self.nome = nome
+        self.verso = verso
+    
+    def parla(self):
+        return f"{self.nome} dice: {self.verso}!"
+
+gatto = Animale("Gatto", "Miao")
+cane = Animale("Cane", "Bau")
+print(gatto.parla())
+print(cane.parla())
+`
+  },
+  cpp: {
+    name:'C++', file:'main.cpp', color:'var(--cpp)',
+    preview:false,
+    code:`// ─── C++20 ────────────────────────────────
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <numeric>
+
+// Funzione template
+template<typename T>
+T massimo(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+// Classe con costruttore
+class Studente {
+public:
+    std::string nome;
+    int voto;
+    
+    Studente(std::string n, int v) : nome(n), voto(v) {}
+    
+    void stampa() const {
+        std::cout << nome << ": " << voto << "/10\\n";
+    }
+};
+
+int main() {
+    std::cout << "=== C++ Demo ===\\n";
+    
+    // Variabili
+    int x = 42;
+    double pi = 3.14159;
+    std::string msg = "Hello, C++!";
+    
+    std::cout << msg << "\\n";
+    std::cout << "x = " << x << ", pi = " << pi << "\\n";
+    
+    // Template
+    std::cout << "Max(3, 7) = " << massimo(3, 7) << "\\n";
+    std::cout << "Max(3.14, 2.71) = " << massimo(3.14, 2.71) << "\\n";
+    
+    // Vector e algoritmi
+    std::vector<int> v = {5, 2, 8, 1, 9, 3, 7, 4, 6};
+    std::sort(v.begin(), v.end());
+    
+    std::cout << "Ordinato: ";
+    for (int n : v) std::cout << n << " ";
+    std::cout << "\\n";
+    
+    int somma = std::accumulate(v.begin(), v.end(), 0);
+    std::cout << "Somma: " << somma << "\\n";
+    
+    // Array di oggetti
+    std::vector<Studente> classe = {
+        {"Anna", 9}, {"Marco", 7}, {"Sofia", 10}
+    };
+    for (auto& s : classe) s.stampa();
+    
+    return 0;
+}`
+  },
+  java: {
+    name:'Java', file:'Main.java', color:'var(--java)',
+    preview:false,
+    code:`// ─── Java 21 ──────────────────────────────
+import java.util.*;
+import java.util.stream.*;
+
+public class Main {
+    
+    // Interfaccia funzionale
+    @FunctionalInterface
+    interface Operazione {
+        int esegui(int a, int b);
+    }
+    
+    // Classe record (Java 16+)
+    record Persona(String nome, int eta) {
+        String saluta() {
+            return "Ciao, sono " + nome + " (" + eta + " anni)";
+        }
+    }
+    
+    // Metodo ricorsivo
+    static long fibonacci(int n) {
+        if (n <= 1) return n;
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("=== Java Demo ===");
+        
+        // Variabili e tipi
+        String nome = "Mario";
+        int eta = 30;
+        double pi = Math.PI;
+        
+        System.out.printf("Nome: %s, Età: %d, PI: %.4f%n", nome, eta, pi);
+        
+        // Lambda expressions
+        Operazione somma = (a, b) -> a + b;
+        Operazione prodotto = (a, b) -> a * b;
+        System.out.println("3 + 4 = " + somma.esegui(3, 4));
+        System.out.println("3 * 4 = " + prodotto.esegui(3, 4));
+        
+        // Stream API
+        List<Integer> numeri = List.of(1,2,3,4,5,6,7,8,9,10);
+        int sommaPari = numeri.stream()
+            .filter(n -> n % 2 == 0)
+            .mapToInt(Integer::intValue)
+            .sum();
+        System.out.println("Somma pari: " + sommaPari);
+        
+        // Record
+        var persona = new Persona("Sofia", 25);
+        System.out.println(persona.saluta());
+        
+        // Fibonacci
+        System.out.print("Fibonacci: ");
+        for (int i = 0; i < 10; i++) {
+            System.out.print(fibonacci(i) + " ");
+        }
+        System.out.println();
+    }
+}`
+  },
+  rust: {
+    name:'Rust', file:'main.rs', color:'var(--rust)',
+    preview:false,
+    code:`// ─── Rust 1.78 ────────────────────────────
+
+// Struttura con metodi
+#[derive(Debug)]
+struct Rettangolo {
+    larghezza: f64,
+    altezza: f64,
+}
+
+impl Rettangolo {
+    fn new(l: f64, a: f64) -> Self {
+        Rettangolo { larghezza: l, altezza: a }
+    }
+    
+    fn area(&self) -> f64 {
+        self.larghezza * self.altezza
+    }
+    
+    fn perimetro(&self) -> f64 {
+        2.0 * (self.larghezza + self.altezza)
+    }
+    
+    fn e_quadrato(&self) -> bool {
+        self.larghezza == self.altezza
+    }
+}
+
+// Enum con pattern matching
+enum Forma {
+    Cerchio(f64),
+    Rettangolo(f64, f64),
+    Triangolo(f64, f64),
+}
+
+impl Forma {
+    fn area(&self) -> f64 {
+        match self {
+            Forma::Cerchio(r) => std::f64::consts::PI * r * r,
+            Forma::Rettangolo(l, a) => l * a,
+            Forma::Triangolo(b, h) => 0.5 * b * h,
+        }
+    }
+}
+
+fn fattoriale(n: u64) -> u64 {
+    (1..=n).product()
+}
+
+fn main() {
+    println!("=== Rust Demo ===");
+    
+    // Ownership e borrowing
+    let s1 = String::from("Hello, Rust!");
+    let len = s1.len();
+    println!("{} (lunghezza: {})", s1, len);
+    
+    // Struct
+    let rect = Rettangolo::new(5.0, 3.0);
+    println!("Area: {:.2}, Perimetro: {:.2}", rect.area(), rect.perimetro());
+    println!("È quadrato: {}", rect.e_quadrato());
+    println!("Debug: {:?}", rect);
+    
+    // Enum e match
+    let forme = vec![
+        Forma::Cerchio(5.0),
+        Forma::Rettangolo(4.0, 6.0),
+        Forma::Triangolo(3.0, 4.0),
+    ];
+    for forma in &forme {
+        println!("Area: {:.2}", forma.area());
+    }
+    
+    // Fattoriali
+    for i in 1..=8 {
+        println!("{}! = {}", i, fattoriale(i));
+    }
+    
+    // Iteratori funzionali
+    let somma: i32 = (1..=10).filter(|n| n % 2 == 0).sum();
+    println!("Somma pari 1-10: {}", somma);
+}`
+  },
+  sql: {
+    name:'SQL', file:'query.sql', color:'var(--sql)',
+    preview:false,
+    code:`-- ─── SQL (SQLite) ────────────────────────
+
+-- Crea tabelle
+CREATE TABLE IF NOT EXISTS studenti (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    cognome TEXT NOT NULL,
+    eta INTEGER,
+    email TEXT UNIQUE,
+    voto_medio REAL DEFAULT 0.0
+);
+
+CREATE TABLE IF NOT EXISTS corsi (
+    id INTEGER PRIMARY KEY,
+    nome TEXT NOT NULL,
+    crediti INTEGER,
+    docente TEXT
+);
+
+CREATE TABLE IF NOT EXISTS iscrizioni (
+    studente_id INTEGER,
+    corso_id INTEGER,
+    voto INTEGER,
+    data_iscrizione DATE,
+    PRIMARY KEY (studente_id, corso_id)
+);
+
+-- Inserisci dati
+INSERT INTO studenti (nome, cognome, eta, email, voto_medio) VALUES
+    ('Mario', 'Rossi', 22, 'mario@mail.it', 8.5),
+    ('Sofia', 'Bianchi', 24, 'sofia@mail.it', 9.2),
+    ('Luca', 'Ferrari', 21, 'luca@mail.it', 7.8),
+    ('Anna', 'Esposito', 23, 'anna@mail.it', 9.8);
+
+INSERT INTO corsi VALUES
+    (1, 'Algoritmi', 6, 'Prof. Romano'),
+    (2, 'Basi di Dati', 6, 'Prof. Conte'),
+    (3, 'Reti', 3, 'Prof. Villa');
+
+-- Query: tutti gli studenti
+SELECT nome, cognome, eta, voto_medio FROM studenti
+ORDER BY voto_medio DESC;
+
+-- Query: studenti con voto > 8
+SELECT nome || ' ' || cognome AS studente,
+       voto_medio,
+       CASE WHEN voto_medio >= 9 THEN 'Eccellente'
+            WHEN voto_medio >= 8 THEN 'Ottimo'
+            ELSE 'Buono' END AS valutazione
+FROM studenti
+WHERE voto_medio > 8;
+
+-- Statistiche
+SELECT 
+    COUNT(*) as totale,
+    ROUND(AVG(voto_medio), 2) as media_classe,
+    MAX(voto_medio) as massimo,
+    MIN(voto_medio) as minimo
+FROM studenti;`
+  },
+  bash: {
+    name:'Bash', file:'script.sh', color:'var(--bash)',
+    preview:false,
+    code:`#!/bin/bash
+# ─── Bash 5.2 ─────────────────────────────
+
+echo "=== Bash Script Demo ==="
+
+# Variabili
+NOME="Mario"
+VERSIONE="1.0.0"
+DATA=$(date +%Y-%m-%d 2>/dev/null || echo "2025-01-01")
+
+echo "Script: deploy.sh v$VERSIONE"
+echo "Data: $DATA"
+echo "Utente: $NOME"
+
+# Funzioni
+saluta() {
+    local nome=$1
+    echo "Ciao, $nome! 👋"
+}
+saluta "$NOME"
+
+# Array
+LINGUAGGI=("Python" "JavaScript" "Rust" "C++" "Java")
+echo ""
+echo "Linguaggi supportati:"
+for lang in "\${LINGUAGGI[@]}"; do
+    echo "  ✓ $lang"
+done
+
+# Aritmetica
+echo ""
+echo "Calcoli:"
+for i in 1 2 3 4 5; do
+    quadrato=$((i * i))
+    echo "  $i² = $quadrato"
+done
+
+# Condizioni
+PUNTEGGIO=85
+echo ""
+if [ $PUNTEGGIO -ge 90 ]; then
+    echo "Valutazione: Eccellente 🏆"
+elif [ $PUNTEGGIO -ge 75 ]; then
+    echo "Valutazione: Buono 👍"
+else
+    echo "Valutazione: Da migliorare 📚"
+fi
+
+# Loop con contatore
+echo ""
+echo "Countdown:"
+for ((i=5; i>=1; i--)); do
+    echo "  $i..."
+done
+echo "  🚀 LANCIO!"
+
+echo ""
+echo "Script completato con successo! ✓"`
+  },
+  php: {
+    name:'PHP', file:'index.php', color:'var(--php)',
+    preview:false,
+    code:`<?php
+// ─── PHP 8.3 ──────────────────────────────
+
+declare(strict_types=1);
+
+// Variabili e tipi
+$nome = "Mario";
+$eta = 30;
+$pi = M_PI;
+$attivo = true;
+
+echo "=== PHP 8.3 Demo ===\n";
+echo "Nome: $nome, Età: $eta\n";
+echo "PI: " . round($pi, 4) . "\n";
+
+// Funzioni con typed params (PHP 8+)
+function fattoriale(int $n): int {
+    if ($n <= 1) return 1;
+    return $n * fattoriale($n - 1);
+}
+
+// Arrow functions
+$quadrato = fn(int $n): int => $n * $n;
+$cubo = fn(int $n): int => $n ** 3;
+
+echo "\nFattoriali:\n";
+for ($i = 1; $i <= 7; $i++) {
+    echo "  $i! = " . fattoriale($i) . "\n";
+}
+
+// Array con funzioni
+$numeri = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+$pari = array_filter($numeri, fn($n) => $n % 2 === 0);
+$quadrati = array_map($quadrato, $numeri);
+$somma = array_sum($numeri);
+
+echo "\nArray:\n";
+echo "  Pari: " . implode(", ", $pari) . "\n";
+echo "  Somma: $somma\n";
+
+// Classe con PHP 8 features
+class Persona {
+    public function __construct(
+        public readonly string $nome,
+        public int $eta,
+        private string $email = ""
+    ) {}
+    
+    public function saluta(): string {
+        return "Ciao, sono {$this->nome} ({$this->eta} anni)!";
+    }
+    
+    public function invecchia(): void {
+        $this->eta++;
+    }
+}
+
+$p = new Persona("Sofia", 25, "sofia@mail.it");
+echo "\n" . $p->saluta() . "\n";
+$p->invecchia();
+echo "Dopo un anno: " . $p->eta . " anni\n";
+
+// Match expression (PHP 8+)
+$voto = 9;
+$giudizio = match(true) {
+    $voto >= 10 => "Perfetto!",
+    $voto >= 8  => "Ottimo!",
+    $voto >= 6  => "Sufficiente",
+    default     => "Insufficiente"
+};
+echo "\nVoto $voto: $giudizio\n";
+echo "\nScript PHP completato! ✓\n";`
+  },
+  css: {
+    name:'CSS Sandbox', file:'style.css', color:'var(--css)',
+    preview:true,
+    code:`<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<style>
+  /* ─── CSS Sandbox ─── */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+  }
+  
+  /* Animazione CSS pura */
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .title {
+    color: #00ff88;
+    font-size: 2rem;
+    font-weight: bold;
+    animation: slideIn .6s ease both;
+    letter-spacing: -1px;
+  }
+  
+  .card-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .card {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    width: 150px;
+    animation: slideIn .6s ease both;
+    transition: all .3s ease;
+    cursor: pointer;
+  }
+  .card:hover {
+    transform: translateY(-8px);
+    background: rgba(0,255,136,.08);
+    border-color: rgba(0,255,136,.3);
+    box-shadow: 0 20px 40px rgba(0,255,136,.1);
+  }
+  
+  .spinner {
+    width: 60px; height: 60px;
+    border: 3px solid rgba(255,255,255,.1);
+    border-top-color: #00ff88;
+    border-radius: 50%;
+    animation: rotate 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  .card-label {
+    color: #888;
+    font-size: .8rem;
+    margin-top: .5rem;
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(90deg, #00ff88, #7c3aed, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.2rem;
+    font-weight: bold;
+    animation: pulse 2s ease infinite;
+  }
+  
+  /* CSS Grid */
+  .grid-demo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .grid-cell {
+    background: rgba(124,58,237,.2);
+    border: 1px solid rgba(124,58,237,.3);
+    height: 40px;
+    border-radius: 4px;
+    transition: background .2s;
+  }
+  .grid-cell:hover { background: rgba(124,58,237,.5); }
+</style>
+</head>
+<body>
+  <h1 class="title">✨ CSS in azione</h1>
+  <p class="gradient-text">Gradient animato con CSS puro</p>
+  <div class="card-row">
+    <div class="card" style="animation-delay:.1s">
+      <div class="spinner"></div>
+      <div class="card-label">Loading...</div>
+    </div>
+    <div class="card" style="animation-delay:.2s">
+      <div style="font-size:2.5rem">🎨</div>
+      <div class="card-label">Hover su di me!</div>
+    </div>
+    <div class="card" style="animation-delay:.3s">
+      <div style="font-size:2.5rem">⚡</div>
+      <div class="card-label">CSS Magic</div>
+    </div>
+  </div>
+  <div class="grid-demo">
+    <div class="grid-cell"></div><div class="grid-cell"></div>
+    <div class="grid-cell"></div><div class="grid-cell"></div>
+    <div class="grid-cell"></div><div class="grid-cell"></div>
+    <div class="grid-cell"></div><div class="grid-cell"></div>
+  </div>
+</body>
+</html>`
+  }
+};
+
+// ════════════════════════════════════════════
+//  DATA: CURRICULUM
+// ════════════════════════════════════════════
+const TRACKS = [
+  {
+    id:'py', icon:'🐍', name:'Python', color:'var(--py)', cvar:'43,130,246',
+    progress:30, lessons:24,
+    desc:'Il linguaggio più amato dai principianti e dagli esperti. Da zero alla programmazione orientata agli oggetti, passando per strutture dati, funzioni e molto altro.',
+    curriculum:[
+      {n:'01', title:'Introduzione a Python', desc:'Storia, installazione, REPL e il tuo primo script. Perché Python è il linguaggio perfetto per iniziare.', tags:['beginner','teoria'], done:true, modal:'py_intro'},
+      {n:'02', title:'print() e input()', desc:'Stampare output e ricevere input dall\'utente. Le due istruzioni più fondamentali di ogni programma interattivo.', tags:['beginner','pratica'], done:true, modal:'py_print'},
+      {n:'03', title:'Variabili e tipi di dato', desc:'int, float, str, bool, None. Come Python gestisce la tipizzazione dinamica e le conversioni tra tipi.', tags:['beginner','pratica'], done:true, modal:'py_vars'},
+      {n:'04', title:'Operatori', desc:'Aritmetici (+,-,*,/,//,%,**), di confronto (==,!=,<,>), logici (and, or, not). Il motore del calcolo.', tags:['beginner'], done:true, modal:'py_ops'},
+      {n:'05', title:'Stringhe avanzate', desc:'Slicing, metodi (upper, lower, split, join), f-string, multiline. Le stringhe in Python sono potentissime.', tags:['beginner'], done:false, modal:'py_str', current:true},
+      {n:'06', title:'if / elif / else', desc:'Strutture condizionali per prendere decisioni. Operatori ternari e short-circuit evaluation.', tags:['beginner'], done:false, modal:'py_if'},
+      {n:'07', title:'Loop: for e while', desc:'Iterare con for, range(), enumerate(). Loop while con break e continue. Cicli innestati.', tags:['beginner'], done:false, modal:'py_loops'},
+      {n:'08', title:'Liste', desc:'Creare, accedere, modificare e iterare. List comprehension, slicing, metodi fondamentali.', tags:['intermediate'], done:false, modal:'py_lists'},
+      {n:'09', title:'Tuple e Set', desc:'Tuple immutabili e set non ordinati. Quando usare cosa e perché. Operazioni su insiemi.', tags:['intermediate'], done:false, modal:'py_tuple'},
+      {n:'10', title:'Dizionari', desc:'La struttura dati chiave-valore. Dict comprehension, metodi, anidamento e casi d\'uso reali.', tags:['intermediate'], done:false, modal:'py_dict'},
+      {n:'11', title:'Funzioni — def e return', desc:'Definire funzioni, parametri, valori di default, *args e **kwargs. Scope e variabili locali/globali.', tags:['intermediate'], done:false, modal:'py_funcs'},
+      {n:'12', title:'Funzioni Lambda e HOF', desc:'Lambda, map(), filter(), sorted() con key. Programmazione funzionale in Python.', tags:['intermediate'], done:false, modal:'py_lambda'},
+      {n:'13', title:'Gestione eccezioni', desc:'try/except/else/finally, raise, eccezioni personalizzate. Scrivere codice robusto e a prova di errore.', tags:['intermediate'], done:false, modal:'py_exc'},
+      {n:'14', title:'File I/O', desc:'Leggere e scrivere file, context manager with. Gestire CSV e testo in modo professionale.', tags:['intermediate'], done:false, modal:'py_file'},
+      {n:'15', title:'Moduli e package', desc:'import, from...import, __name__, creazione di moduli. Strutturare un progetto Python reale.', tags:['intermediate'], done:false, modal:'py_modules'},
+      {n:'16', title:'OOP — Classi e oggetti', desc:'class, __init__, attributi e metodi. Il paradigma orientato agli oggetti spiegato con esempi concreti.', tags:['advanced'], done:false, modal:'py_oop'},
+      {n:'17', title:'OOP — Ereditarietà', desc:'super(), polimorfismo, override di metodi, classi astratte con ABC. OOP avanzata.', tags:['advanced'], done:false, modal:'py_inherit'},
+      {n:'18', title:'Decoratori', desc:'@staticmethod, @classmethod, @property. Creare decorator personalizzati. Patterns avanzati.', tags:['advanced'], done:false, modal:'py_deco'},
+      {n:'19', title:'Generatori e iteratori', desc:'yield, yield from, lazy evaluation, itertools. Gestire sequenze infinite in modo efficiente.', tags:['advanced'], done:false, modal:'py_gen'},
+      {n:'20', title:'Context Manager', desc:'with statement, __enter__ e __exit__, contextlib. Gestione risorse professionale.', tags:['advanced'], done:false, modal:'py_ctx'},
+      {n:'21', title:'Comprensioni avanzate', desc:'Dict/set comprehension, espressioni walrus :=, pattern matching (match/case, Python 3.10+).', tags:['advanced'], done:false, modal:'py_comp'},
+      {n:'22', title:'NumPy & Pandas intro', desc:'Array multidimensionali con NumPy, DataFrame con Pandas. La porta d\'ingresso al data science.', tags:['advanced','data'], done:false, modal:'py_numpy'},
+      {n:'23', title:'API e requests', desc:'HTTP, REST API, libreria requests, parsing JSON. Connettiti al mondo reale.', tags:['advanced','web'], done:false, modal:'py_api'},
+      {n:'24', title:'Progetto finale', desc:'Costruisci una piccola applicazione completa: todo list CLI, web scraper o analisi dati.', tags:['advanced','project'], done:false, modal:'py_project'},
+    ]
+  },
+  {
+    id:'js', icon:'⚡', name:'JavaScript', color:'var(--js)', cvar:'234,179,8',
+    progress:15, lessons:28,
+    desc:'Il linguaggio del web moderno. Dal DOM alle Promise, da ES6+ a Node.js — JS è ovunque e padroneggiarlo apre mille porte.',
+    curriculum:[
+      {n:'01', title:'Cos\'è JavaScript?', desc:'Storia, ECMAScript, browser vs Node.js. Come JS si esegue e perché è imprescindibile nel 2025.', tags:['beginner'], done:true, modal:'js_intro'},
+      {n:'02', title:'let, const, var', desc:'Differenze tra le tre keyword, scope, hoisting, temporal dead zone. Best practice moderne.', tags:['beginner'], done:true, modal:'js_vars'},
+      {n:'03', title:'Tipi di dato', desc:'string, number, boolean, null, undefined, symbol, bigint. Tipizzazione dinamica e typeof.', tags:['beginner'], done:false, modal:'js_types', current:true},
+      {n:'04', title:'Operatori e coercizione', desc:'==  vs ===, coercizione implicita, operatori logici, nullish coalescing ??, optional chaining ?.', tags:['beginner'], done:false, modal:'js_ops'},
+      {n:'05', title:'Funzioni classiche e arrow', desc:'function declaration vs expression, arrow function, this binding, default parameters, rest/spread.', tags:['beginner'], done:false, modal:'js_funcs'},
+      {n:'06', title:'Array e metodi ES6+', desc:'map, filter, reduce, find, some, every, flat, flatMap, Array.from. Gli strumenti del mestiere.', tags:['intermediate'], done:false, modal:'js_arrays'},
+      {n:'07', title:'Oggetti e destrutturazione', desc:'Object.keys/values/entries, spread, destructuring, computed properties, shorthand methods.', tags:['intermediate'], done:false, modal:'js_objects'},
+      {n:'08', title:'DOM — Manipolare il browser', desc:'querySelector, createElement, addEventListener, classList, innerHTML. Il ponte tra JS e HTML.', tags:['intermediate','web'], done:false, modal:'js_dom'},
+      {n:'09', title:'Classi ES6', desc:'class, constructor, extends, super, static, getter/setter. OOP moderna in JavaScript.', tags:['intermediate'], done:false, modal:'js_classes'},
+      {n:'10', title:'Promise e async/await', desc:'Callback hell → Promise → async/await. Come JavaScript gestisce le operazioni asincrone.', tags:['intermediate'], done:false, modal:'js_async'},
+      {n:'11', title:'Fetch API e REST', desc:'fetch(), JSON, gestione errori, CORS. Chiamate HTTP moderne senza librerie esterne.', tags:['intermediate','web'], done:false, modal:'js_fetch'},
+      {n:'12', title:'Moduli ES6', desc:'import/export, named vs default, dynamic import(). Strutturare codice moderno e scalabile.', tags:['intermediate'], done:false, modal:'js_modules'},
+      {n:'13', title:'Closures e scope avanzato', desc:'Lexical scope, closure patterns, IIFE, module pattern, memory e garbage collection.', tags:['advanced'], done:false, modal:'js_closures'},
+      {n:'14', title:'Prototype chain', desc:'__proto__, Object.create(), prototype inheritance. Come funziona davvero l\'ereditarietà in JS.', tags:['advanced'], done:false, modal:'js_proto'},
+      {n:'15', title:'Event loop e concorrenza', desc:'Call stack, Web APIs, callback queue, microtask queue. Il modello di concorrenza di JavaScript.', tags:['advanced'], done:false, modal:'js_eventloop'},
+      {n:'16', title:'Proxy e Reflect', desc:'Intercettare operazioni sugli oggetti con Proxy. Basi di meta-programmazione in JavaScript.', tags:['advanced'], done:false, modal:'js_proxy'},
+      {n:'17', title:'Generatori e Symbol', desc:'function*, yield, Symbol, iteratori personalizzati. Controllo avanzato del flusso.', tags:['advanced'], done:false, modal:'js_gen'},
+      {n:'18', title:'Web API avanzate', desc:'LocalStorage, SessionStorage, IndexedDB, ServiceWorker base. Il browser come piattaforma.', tags:['advanced','web'], done:false, modal:'js_webapi'},
+      {n:'19', title:'RegEx in JavaScript', desc:'Pattern matching, gruppi di cattura, lookahead/lookbehind. Manipolazione potente delle stringhe.', tags:['advanced'], done:false, modal:'js_regex'},
+      {n:'20', title:'Testing con Jest', desc:'unit test, test runner, mock functions, coverage. Scrivere codice JavaScript professionale.', tags:['advanced','tooling'], done:false, modal:'js_jest'},
+      {n:'21', title:'Node.js intro', desc:'fs, path, http module, npm. Dal browser al server — JavaScript è ovunque.', tags:['advanced','backend'], done:false, modal:'js_node'},
+      {n:'22', title:'TypeScript intro', desc:'Tipi statici, interfacce, generics, utility types. Il superset che domina il mercato.', tags:['advanced'], done:false, modal:'js_ts'},
+      {n:'23', title:'React intro', desc:'JSX, componenti, props, useState, useEffect. La libreria UI più popolare al mondo.', tags:['advanced','framework'], done:false, modal:'js_react'},
+      {n:'24', title:'Performance e ottimizzazione', desc:'Debounce, throttle, memoization, lazy loading, Web Vitals. JavaScript veloce e professionale.', tags:['advanced'], done:false, modal:'js_perf'},
+      {n:'25', title:'Design patterns', desc:'Singleton, Observer, Factory, Module, MVC in JavaScript moderno. Codice scalabile.', tags:['advanced'], done:false, modal:'js_patterns'},
+      {n:'26', title:'Sicurezza web (XSS, CSRF)', desc:'Attacchi comuni, sanificazione input, CSP, HTTPS. Scrivere JavaScript sicuro.', tags:['advanced','security'], done:false, modal:'js_security'},
+      {n:'27', title:'Canvas e WebGL base', desc:'2D Canvas API, animazioni, giochi semplici. La parte creativa di JavaScript.', tags:['advanced'], done:false, modal:'js_canvas'},
+      {n:'28', title:'Progetto: app fullstack', desc:'Todo app con React + Node.js + REST API. Tutto quello che hai imparato in un progetto reale.', tags:['advanced','project'], done:false, modal:'js_project'},
+    ]
+  },
+  {
+    id:'html', icon:'🌐', name:'HTML & CSS', color:'var(--html)', cvar:'249,115,22',
+    progress:60, lessons:20,
+    desc:'Le fondamenta del web. Ogni sito parte da qui — struttura semantica, layout moderni con CSS Grid e Flexbox, animazioni e responsive design.',
+    curriculum:[
+      {n:'01', title:'Struttura base HTML5', desc:'DOCTYPE, html, head, body, meta charset. Il documento HTML: ogni tag ha il suo significato.', tags:['beginner'], done:true, modal:'html_base'},
+      {n:'02', title:'Tag semantici', desc:'header, nav, main, section, article, aside, footer. HTML semantico per accessibilità e SEO.', tags:['beginner'], done:true, modal:'html_semantic'},
+      {n:'03', title:'Testo e tipografia', desc:'h1-h6, p, span, strong, em, blockquote, pre, code. Formattare il testo in modo semantico.', tags:['beginner'], done:true, modal:'html_text'},
+      {n:'04', title:'Link, immagini e media', desc:'a href, img src/alt, video, audio, iframe. Collegare risorse e inserire media nel documento.', tags:['beginner'], done:true, modal:'html_media'},
+      {n:'05', title:'Form e input', desc:'form, input (tutti i type), select, textarea, button, label, validation HTML5.', tags:['beginner'], done:true, modal:'html_forms'},
+      {n:'06', title:'Tabelle', desc:'table, thead, tbody, tr, th, td, colspan/rowspan. Dati tabulari presentati correttamente.', tags:['beginner'], done:true, modal:'html_tables'},
+      {n:'07', title:'Introduzione al CSS', desc:'Selettori base (tag, classe, id), cascata, specificità, inheritance. Come il browser applica gli stili.', tags:['beginner'], done:false, modal:'css_intro', current:true},
+      {n:'08', title:'Box Model', desc:'content, padding, border, margin. Il modello a scatola che governa ogni elemento della pagina.', tags:['beginner'], done:false, modal:'css_box'},
+      {n:'09', title:'Colori, font e sfondi', desc:'Colori (hex, rgb, hsl), Google Fonts, font-weight/size/line-height, background-image, gradients.', tags:['beginner'], done:false, modal:'css_style'},
+      {n:'10', title:'Flexbox', desc:'display:flex, flex-direction, justify-content, align-items, flex-wrap, gap. Layout moderno 1D.', tags:['intermediate'], done:false, modal:'css_flex'},
+      {n:'11', title:'CSS Grid', desc:'display:grid, grid-template-columns/rows, grid-area, auto-fit/fill. Layout 2D potentissimo.', tags:['intermediate'], done:false, modal:'css_grid'},
+      {n:'12', title:'Responsive Design', desc:'Media query, mobile-first, viewport, unità relative (rem, em, vw, vh), immagini responsive.', tags:['intermediate'], done:false, modal:'css_responsive'},
+      {n:'13', title:'Pseudo-classi e pseudo-elementi', desc:':hover, :focus, :nth-child, ::before, ::after. Selettori avanzati per stili contestuali.', tags:['intermediate'], done:false, modal:'css_pseudo'},
+      {n:'14', title:'Variabili CSS (Custom Properties)', desc:'--variabile, var(), :root. Design token e theming professionale.', tags:['intermediate'], done:false, modal:'css_vars'},
+      {n:'15', title:'Transizioni e animazioni', desc:'transition, @keyframes, animation, transform. Aggiungere vita alle interfacce.', tags:['intermediate'], done:false, modal:'css_anim'},
+      {n:'16', title:'Position e z-index', desc:'static, relative, absolute, fixed, sticky. Stack context e overlapping elements.', tags:['intermediate'], done:false, modal:'css_position'},
+      {n:'17', title:'CSS moderno', desc:'clamp(), container query, :has(), aspect-ratio, scroll-snap, subgrid. CSS 2024.', tags:['advanced'], done:false, modal:'css_modern'},
+      {n:'18', title:'Accessibilità (a11y)', desc:'ARIA roles/labels, focus management, contrasto colori, screen reader. Web per tutti.', tags:['advanced'], done:false, modal:'html_a11y'},
+      {n:'19', title:'Performance CSS', desc:'Critical CSS, will-change, contain, font display, CSS containment. Ottimizzare il rendering.', tags:['advanced'], done:false, modal:'css_perf'},
+      {n:'20', title:'Progetto: landing page completa', desc:'Landing page responsive con hero, features, form contatti e footer. Da zero a pubblicata.', tags:['advanced','project'], done:false, modal:'html_project'},
+    ]
+  },
+  {
+    id:'cpp', icon:'⚙️', name:'C++', color:'var(--cpp)', cvar:'236,72,153',
+    progress:0, lessons:30,
+    desc:'Potenza e controllo massimi. Usato in sistemi operativi, videogiochi (Unreal Engine), software embedded e applicazioni ad alte prestazioni.',
+    curriculum:[
+      {n:'01', title:'Compilazione e ambiente', desc:'g++, clang++, CMake, IDE setup. Il ciclo compilazione→linking→esecuzione. Hello World.', tags:['beginner'], done:false, modal:'cpp_intro'},
+      {n:'02', title:'Tipi fondamentali', desc:'int, long, float, double, char, bool, size_t. Overflow, sizeof, limiti dei tipi numerici.', tags:['beginner'], done:false, modal:'cpp_types'},
+      {n:'03', title:'Input/Output streams', desc:'cin, cout, cerr, operatori << e >>. Formattazione con iomanip. File stream base.', tags:['beginner'], done:false, modal:'cpp_io'},
+      {n:'04', title:'Controllo del flusso', desc:'if/else, switch, while, do-while, for, range-based for, break/continue, goto (e perché evitarlo).', tags:['beginner'], done:false, modal:'cpp_flow'},
+      {n:'05', title:'Funzioni', desc:'Dichiarazione, definizione, overloading, default arguments, inline, ricorsione.', tags:['beginner'], done:false, modal:'cpp_funcs'},
+      {n:'06', title:'Array e puntatori', desc:'Array statici, aritmetica dei puntatori, relazione array-puntatori. La base della gestione memoria.', tags:['intermediate'], done:false, modal:'cpp_ptrs'},
+      {n:'07', title:'Riferimenti e gestione memoria', desc:'References, stack vs heap, new/delete, memory leak. Smart pointer preview.', tags:['intermediate'], done:false, modal:'cpp_mem'},
+      {n:'08', title:'std::string e string_view', desc:'String moderno in C++. Metodi, comparazione, conversioni. std::string_view per performance.', tags:['intermediate'], done:false, modal:'cpp_str'},
+      {n:'09', title:'STL: vector, list, deque', desc:'Container sequenziali della Standard Template Library. Complessità, iteratori, algoritmi.', tags:['intermediate'], done:false, modal:'cpp_vector'},
+      {n:'10', title:'STL: map, set, unordered', desc:'Container associativi. map vs unordered_map. Ricerca O(log n) vs O(1) amortized.', tags:['intermediate'], done:false, modal:'cpp_map'},
+      {n:'11', title:'OOP — Classi base', desc:'class vs struct, costruttori/distruttori, member functions, access specifiers, this.', tags:['intermediate'], done:false, modal:'cpp_oop'},
+      {n:'12', title:'OOP — Ereditarietà e polimorfismo', desc:'virtual, override, abstract classes (pure virtual), vtable. OOP in C++.', tags:['advanced'], done:false, modal:'cpp_inherit'},
+      {n:'13', title:'Template', desc:'Function/class template, template specialization, variadic templates. Programmazione generica.', tags:['advanced'], done:false, modal:'cpp_templates'},
+      {n:'14', title:'Smart pointer', desc:'unique_ptr, shared_ptr, weak_ptr. Gestione automatica della memoria senza garbage collector.', tags:['advanced'], done:false, modal:'cpp_smart'},
+      {n:'15', title:'Lambda e funzioni anonime', desc:'Sintassi lambda, cattura per valore/riferimento, std::function, uso con algoritmi STL.', tags:['advanced'], done:false, modal:'cpp_lambda'},
+      {n:'16', title:'Move semantics', desc:'lvalue/rvalue, std::move, move constructor/assignment. Performance critica in C++ moderno.', tags:['advanced'], done:false, modal:'cpp_move'},
+    ]
+  },
+  {
+    id:'sql', icon:'🗄️', name:'SQL', color:'var(--sql)', cvar:'6,182,212',
+    progress:0, lessons:16,
+    desc:'Il linguaggio delle basi di dati. Qualsiasi applicazione seria usa SQL — saper interrogare, modificare e progettare database è competenza fondamentale.',
+    curriculum:[
+      {n:'01', title:'Cos\'è un database relazionale?', desc:'Tabelle, righe, colonne, chiavi primarie/esterne. Modello relazionale vs altri paradigmi.', tags:['beginner'], done:false, modal:'sql_intro'},
+      {n:'02', title:'SELECT base', desc:'SELECT, FROM, WHERE, ORDER BY, LIMIT, DISTINCT. Le prime query per estrarre dati.', tags:['beginner'], done:false, modal:'sql_select'},
+      {n:'03', title:'Operatori e filtri', desc:'AND, OR, NOT, IN, BETWEEN, LIKE, IS NULL. Filtrare dati in modo preciso e potente.', tags:['beginner'], done:false, modal:'sql_filters'},
+      {n:'04', title:'Funzioni aggregate', desc:'COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING. Statistiche e aggregazioni sui dati.', tags:['beginner'], done:false, modal:'sql_agg'},
+      {n:'05', title:'JOIN — Unire tabelle', desc:'INNER, LEFT, RIGHT, FULL JOIN. Come collegare dati da tabelle diverse. Chiavi esterne.', tags:['intermediate'], done:false, modal:'sql_join'},
+      {n:'06', title:'Subquery', desc:'Query annidate in WHERE, FROM, SELECT. Correlated subquery vs subquery semplici.', tags:['intermediate'], done:false, modal:'sql_sub'},
+      {n:'07', title:'INSERT, UPDATE, DELETE', desc:'Modificare i dati. Transazioni, rollback, integrità dei dati. Operazioni DML sicure.', tags:['intermediate'], done:false, modal:'sql_dml'},
+      {n:'08', title:'DDL — Creare strutture', desc:'CREATE TABLE, ALTER, DROP, vincoli (NOT NULL, UNIQUE, CHECK, FOREIGN KEY), tipi di dato.', tags:['intermediate'], done:false, modal:'sql_ddl'},
+      {n:'09', title:'Indici e performance', desc:'Cos\'è un indice, quando crearlo, EXPLAIN/EXPLAIN ANALYZE, query optimization base.', tags:['intermediate'], done:false, modal:'sql_index'},
+      {n:'10', title:'CTE e WITH', desc:'Common Table Expression per query complesse leggibili. CTE ricorsive per dati gerarchici.', tags:['advanced'], done:false, modal:'sql_cte'},
+      {n:'11', title:'Window Functions', desc:'ROW_NUMBER, RANK, LEAD/LAG, PARTITION BY. Analisi avanzata senza perdere dettaglio di riga.', tags:['advanced'], done:false, modal:'sql_window'},
+      {n:'12', title:'Viste e stored procedure', desc:'VIEW, materialized view, stored procedure, trigger. Logica nel database.', tags:['advanced'], done:false, modal:'sql_views'},
+      {n:'13', title:'Normalizzazione', desc:'1NF, 2NF, 3NF, BCNF. Progettare database senza ridondanza e anomalie.', tags:['advanced','design'], done:false, modal:'sql_normal'},
+      {n:'14', title:'Transazioni e ACID', desc:'BEGIN, COMMIT, ROLLBACK, SAVEPOINT. Atomicità, Consistenza, Isolamento, Durabilità.', tags:['advanced'], done:false, modal:'sql_acid'},
+      {n:'15', title:'NoSQL vs SQL', desc:'MongoDB, Redis, differenze paradigmatiche, quando usare cosa, NewSQL, database moderni.', tags:['advanced'], done:false, modal:'sql_nosql'},
+      {n:'16', title:'Progetto: e-commerce DB', desc:'Progetta e popola il database di un e-commerce completo. Schema, query analitiche e ottimizzazione.', tags:['advanced','project'], done:false, modal:'sql_project'},
+    ]
+  },
+  {
+    id:'algo', icon:'🧠', name:'Algoritmi & DS', color:'var(--success)', cvar:'74,222,128',
+    progress:0, lessons:20,
+    desc:'Il cuore dell\'informatica. Sorting, ricerca, grafi, alberi, complessità computazionale — pensa come un informatico e risolvi qualsiasi problema.',
+    curriculum:[
+      {n:'01', title:'Notazione Big-O', desc:'O(1), O(n), O(n log n), O(n²), O(2ⁿ). Come misurare l\'efficienza di un algoritmo.', tags:['beginner'], done:false, modal:'algo_bigo'},
+      {n:'02', title:'Array e Stringhe', desc:'Sliding window, two pointers, prefix sum. Tecniche fondamentali per problemi di array.', tags:['beginner'], done:false, modal:'algo_arrays'},
+      {n:'03', title:'Stack e Queue', desc:'LIFO, FIFO, implementazione con array/linked list. Applicazioni: parentesi bilanciate, BFS.', tags:['beginner'], done:false, modal:'algo_stack'},
+      {n:'04', title:'Linked List', desc:'Singly/doubly linked list, operazioni O(1), problemi classici (reverse, cycle detection).', tags:['intermediate'], done:false, modal:'algo_ll'},
+      {n:'05', title:'Hash Table', desc:'Hashing, collision handling, load factor. La struttura dati che rende O(1) la ricerca.', tags:['intermediate'], done:false, modal:'algo_hash'},
+      {n:'06', title:'Bubble, Selection, Insertion Sort', desc:'Algoritmi di ordinamento base. Complessità, casi migliori/peggiori, stabilità.', tags:['intermediate'], done:false, modal:'algo_sort1'},
+      {n:'07', title:'Merge Sort e Quick Sort', desc:'Divide and conquer. Ricorsione, pivot selection, O(n log n) medio. Confronto pratico.', tags:['intermediate'], done:false, modal:'algo_sort2'},
+      {n:'08', title:'Ricerca binaria', desc:'O(log n), varianti (lower bound, upper bound), applicazioni non ovvie. Pattern di ricerca.', tags:['intermediate'], done:false, modal:'algo_bsearch'},
+      {n:'09', title:'Alberi binari', desc:'BST, inserzione, ricerca, DFS (inorder/preorder/postorder), bilanciamento base.', tags:['intermediate'], done:false, modal:'algo_tree'},
+      {n:'10', title:'Heap e Priority Queue', desc:'Min-heap, max-heap, heapify, heap sort, applicazioni (Dijkstra, Top-K).', tags:['intermediate'], done:false, modal:'algo_heap'},
+      {n:'11', title:'Grafi — BFS', desc:'Rappresentazione (adj list/matrix), BFS, shortest path in grafi non pesati.', tags:['advanced'], done:false, modal:'algo_bfs'},
+      {n:'12', title:'Grafi — DFS e applicazioni', desc:'DFS iterativo/ricorsivo, cycle detection, topological sort, componenti connesse.', tags:['advanced'], done:false, modal:'algo_dfs'},
+      {n:'13', title:'Dijkstra e shortest path', desc:'Algoritmo di Dijkstra, Bellman-Ford, Floyd-Warshall. Grafi pesati.', tags:['advanced'], done:false, modal:'algo_dijkstra'},
+      {n:'14', title:'Programmazione dinamica', desc:'Memoization vs tabulation, overlapping subproblems, optimal substructure. DP patterns.', tags:['advanced'], done:false, modal:'algo_dp'},
+      {n:'15', title:'DP classici', desc:'Fibonacci, Knapsack 0/1, LCS, LIS, Edit Distance, Coin Change. I problemi DP fondamentali.', tags:['advanced'], done:false, modal:'algo_dp2'},
+      {n:'16', title:'Backtracking', desc:'N-Queens, Sudoku solver, subset sum, permutazioni. Esplorazione sistematica con pruning.', tags:['advanced'], done:false, modal:'algo_back'},
+      {n:'17', title:'Greedy algorithms', desc:'Activity selection, Huffman, Prim, Kruskal. Quando la scelta locale porta alla soluzione ottima.', tags:['advanced'], done:false, modal:'algo_greedy'},
+      {n:'18', title:'Trie', desc:'Prefix tree per ricerca stringhe, autocomplete, spell checker. Struttura dati specializzata.', tags:['advanced'], done:false, modal:'algo_trie'},
+      {n:'19', title:'Union Find', desc:'Disjoint Set Union, path compression, union by rank. Componenti connesse in O(α(n)).', tags:['advanced'], done:false, modal:'algo_uf'},
+      {n:'20', title:'System Design intro', desc:'Scalabilità, load balancing, caching, database sharding. Pensare i sistemi distribuiti.', tags:['advanced','design'], done:false, modal:'algo_sys'},
+    ]
+  },
+];
+
+// ════════════════════════════════════════════
+//  DATA: MODALI LEZIONI (contenuti)
+// ════════════════════════════════════════════
+const MODALS = {
+  py_print: {
+    badge:'PYTHON — LEZIONE 02',
+    title:'print() e input()',
+    body:`
+<p><strong>print()</strong> è la prima funzione che impari in Python. Stampa qualsiasi valore nell'output.</p>
+<h3>Sintassi base</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">print</span>(<span class="str">"Hello, World!"</span>)      <span class="cm"># Output: Hello, World!</span>
+<span class="kw">print</span>(<span class="num">42</span>)                    <span class="cm"># Output: 42</span>
+<span class="kw">print</span>(<span class="num">3.14</span>)                  <span class="cm"># Output: 3.14</span>
+<span class="kw">print</span>(<span class="kw">True</span>)                  <span class="cm"># Output: True</span></div>
+<h3>Parametri di print()</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># sep: separatore tra argomenti (default: spazio)</span>
+<span class="kw">print</span>(<span class="str">"uno"</span>, <span class="str">"due"</span>, <span class="str">"tre"</span>)           <span class="cm"># uno due tre</span>
+<span class="kw">print</span>(<span class="str">"uno"</span>, <span class="str">"due"</span>, sep=<span class="str">"-"</span>)       <span class="cm"># uno-due</span>
+
+<span class="cm"># end: cosa stampare alla fine (default: newline)</span>
+<span class="kw">print</span>(<span class="str">"Ciao"</span>, end=<span class="str">" "</span>)
+<span class="kw">print</span>(<span class="str">"Mondo"</span>)                       <span class="cm"># Ciao Mondo</span>
+
+<span class="cm"># f-string (Python 3.6+) — il modo moderno</span>
+nome = <span class="str">"Mario"</span>
+eta = <span class="num">25</span>
+<span class="kw">print</span>(<span class="str">f"Ciao <span class="op">{</span>nome<span class="op">}</span>! Hai <span class="op">{</span>eta<span class="op">}</span> anni."</span>)</div>
+<h3>input() — Leggere da tastiera</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>nome = <span class="fn">input</span>(<span class="str">"Come ti chiami? "</span>)  <span class="cm"># attende input utente</span>
+<span class="kw">print</span>(<span class="str">f"Ciao, <span class="op">{</span>nome<span class="op">}</span>!"</span>)
+
+<span class="cm"># input() restituisce sempre una stringa!</span>
+eta_str = <span class="fn">input</span>(<span class="str">"Quanti anni hai? "</span>)
+eta = <span class="fn">int</span>(eta_str)       <span class="cm"># conversione a intero</span>
+<span class="kw">print</span>(<span class="str">f"Fra 10 anni ne avrai <span class="op">{</span>eta + <span class="num">10</span><span class="op">}</span>"</span>)</div>
+<p>💡 <strong>Tip:</strong> Puoi mettere qualsiasi espressione Python dentro le <strong>f-string</strong> tra le parentesi graffe!</p>
+`
+  },
+  py_vars: {
+    badge:'PYTHON — LEZIONE 03',
+    title:'Variabili e Tipi di Dato',
+    body:`
+<p>In Python, le variabili sono <strong>contenitori con un nome</strong> che puntano a valori in memoria. Non serve dichiarare il tipo — Python lo inferisce automaticamente.</p>
+<h3>I tipi fondamentali</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># int — numeri interi</span>
+eta = <span class="num">25</span>
+punteggio = <span class="num">-100</span>
+miliardo = <span class="num">1_000_000_000</span>   <span class="cm"># underscore per leggibilità</span>
+
+<span class="cm"># float — numeri decimali</span>
+pi = <span class="num">3.14159</span>
+temp = <span class="num">-2.7</span>
+scientifico = <span class="num">1.5e10</span>         <span class="cm"># 15000000000.0</span>
+
+<span class="cm"># str — stringhe</span>
+nome = <span class="str">"Mario"</span>
+msg = <span class="str">'Ciao Mondo'</span>
+multilinea = <span class="str">"""Prima riga
+Seconda riga"""</span>
+
+<span class="cm"># bool — booleani</span>
+attivo = <span class="kw">True</span>
+completato = <span class="kw">False</span>
+
+<span class="cm"># NoneType — assenza di valore</span>
+risultato = <span class="kw">None</span>
+
+<span class="cm"># Verificare il tipo</span>
+<span class="kw">print</span>(<span class="fn">type</span>(eta))       <span class="cm"># &lt;class 'int'&gt;</span>
+<span class="kw">print</span>(<span class="fn">type</span>(pi))        <span class="cm"># &lt;class 'float'&gt;</span>
+<span class="kw">print</span>(<span class="fn">type</span>(nome))      <span class="cm"># &lt;class 'str'&gt;</span></div>
+<h3>Conversioni di tipo</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>x = <span class="fn">int</span>(<span class="str">"42"</span>)         <span class="cm"># str → int</span>
+y = <span class="fn">float</span>(<span class="str">"3.14"</span>)     <span class="cm"># str → float</span>
+z = <span class="fn">str</span>(<span class="num">100</span>)           <span class="cm"># int → str</span>
+b = <span class="fn">bool</span>(<span class="num">0</span>)            <span class="cm"># False (0, "", [], None sono falsy)</span>
+b2 = <span class="fn">bool</span>(<span class="num">42</span>)          <span class="cm"># True (qualsiasi altro valore)</span></div>
+<h3>Assegnazioni multiple</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>a, b, c = <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>           <span class="cm"># unpacking</span>
+x = y = z = <span class="num">0</span>               <span class="cm"># stesso valore</span>
+a, b = b, a                  <span class="cm"># swap elegante!</span>
+primo, *resto = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>]   <span class="cm"># starred assignment</span></div>
+`
+  },
+  py_if: {
+    badge:'PYTHON — LEZIONE 06',
+    title:'if / elif / else',
+    body:`
+<p>Le strutture condizionali permettono al tuo programma di <strong>prendere decisioni</strong> in base ai valori. In Python si usa l'indentazione (4 spazi) per definire i blocchi.</p>
+<h3>Struttura base</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>temperatura = <span class="num">22</span>
+
+<span class="kw">if</span> temperatura > <span class="num">30</span>:
+    <span class="kw">print</span>(<span class="str">"Caldo! 🌡️"</span>)
+<span class="kw">elif</span> temperatura > <span class="num">20</span>:
+    <span class="kw">print</span>(<span class="str">"Piacevole ☀️"</span>)
+<span class="kw">elif</span> temperatura > <span class="num">10</span>:
+    <span class="kw">print</span>(<span class="str">"Fresco 🍂"</span>)
+<span class="kw">else</span>:
+    <span class="kw">print</span>(<span class="str">"Freddo! 🧥"</span>)
+
+<span class="cm"># Output: "Piacevole ☀️"</span></div>
+<h3>Operatori di confronto</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>x, y = <span class="num">5</span>, <span class="num">10</span>
+
+<span class="kw">print</span>(x == y)   <span class="cm"># False  — uguale</span>
+<span class="kw">print</span>(x != y)   <span class="cm"># True   — diverso</span>
+<span class="kw">print</span>(x < y)    <span class="cm"># True   — minore</span>
+<span class="kw">print</span>(x <= y)   <span class="cm"># True   — minore o uguale</span>
+<span class="kw">print</span>(x > y)    <span class="cm"># False  — maggiore</span>
+<span class="kw">print</span>(x >= y)   <span class="cm"># False  — maggiore o uguale</span>
+<span class="kw">print</span>(<span class="num">1</span> < x < <span class="num">8</span>) <span class="cm"># True   — confronto chained!</span></div>
+<h3>Operatori logici</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>eta = <span class="num">22</span>
+iscritto = <span class="kw">True</span>
+
+<span class="kw">if</span> eta >= <span class="num">18</span> <span class="kw">and</span> iscritto:
+    <span class="kw">print</span>(<span class="str">"Accesso consentito"</span>)
+
+<span class="kw">if</span> eta < <span class="num">16</span> <span class="kw">or</span> <span class="kw">not</span> iscritto:
+    <span class="kw">print</span>(<span class="str">"Accesso negato"</span>)
+
+<span class="cm"># Operatore ternario (inline if)</span>
+msg = <span class="str">"adulto"</span> <span class="kw">if</span> eta >= <span class="num">18</span> <span class="kw">else</span> <span class="str">"minorenne"</span>
+<span class="kw">print</span>(msg)  <span class="cm"># adulto</span></div>
+`
+  },
+  py_loops: {
+    badge:'PYTHON — LEZIONE 07',
+    title:'Loop: for e while',
+    body:`
+<p>I loop permettono di <strong>ripetere blocchi di codice</strong> senza riscriverli. Sono fondamentali in ogni programma.</p>
+<h3>for — Loop su sequenze</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># range(n) — da 0 a n-1</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">5</span>):
+    <span class="kw">print</span>(i, end=<span class="str">" "</span>)  <span class="cm"># 0 1 2 3 4</span>
+
+<span class="cm"># range(start, stop, step)</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="num">20</span>, <span class="num">3</span>):
+    <span class="kw">print</span>(i, end=<span class="str">" "</span>)  <span class="cm"># 0 3 6 9 12 15 18</span>
+
+<span class="cm"># Iterare su una lista</span>
+frutti = [<span class="str">"mela"</span>, <span class="str">"banana"</span>, <span class="str">"pera"</span>]
+<span class="kw">for</span> frutto <span class="kw">in</span> frutti:
+    <span class="kw">print</span>(<span class="str">f"Frutto: <span class="op">{</span>frutto<span class="op">}</span>"</span>)
+
+<span class="cm"># enumerate — indice + valore</span>
+<span class="kw">for</span> i, frutto <span class="kw">in</span> <span class="fn">enumerate</span>(frutti):
+    <span class="kw">print</span>(<span class="str">f"<span class="op">{</span>i<span class="op">}</span>: <span class="op">{</span>frutto<span class="op">}</span>"</span>)</div>
+<h3>while — Ripeti finché vero</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>contatore = <span class="num">0</span>
+<span class="kw">while</span> contatore < <span class="num">5</span>:
+    <span class="kw">print</span>(contatore, end=<span class="str">" "</span>)
+    contatore += <span class="num">1</span>  <span class="cm"># IMPORTANTE: o diventa infinito!</span>
+
+<span class="cm"># break — esci dal loop</span>
+<span class="kw">for</span> n <span class="kw">in</span> <span class="fn">range</span>(<span class="num">100</span>):
+    <span class="kw">if</span> n == <span class="num">5</span>:
+        <span class="kw">break</span>  <span class="cm"># esce quando n=5</span>
+
+<span class="cm"># continue — salta questa iterazione</span>
+<span class="kw">for</span> n <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+    <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">0</span>:
+        <span class="kw">continue</span>  <span class="cm"># salta i pari</span>
+    <span class="kw">print</span>(n, end=<span class="str">" "</span>)  <span class="cm"># 1 3 5 7 9</span></div>
+`
+  },
+  py_funcs: {
+    badge:'PYTHON — LEZIONE 11',
+    title:'Funzioni — def e return',
+    body:`
+<p>Le <strong>funzioni</strong> sono blocchi di codice riutilizzabili. Scrivi la logica una volta, chiamala infinite volte. Il principio <strong>DRY</strong> (Don't Repeat Yourself).</p>
+<h3>Definizione e chiamata</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">def</span> <span class="fn">saluta</span>(nome):
+    <span class="str">"""Docstring: descrizione della funzione"""</span>
+    <span class="kw">return</span> <span class="str">f"Ciao, <span class="op">{</span>nome<span class="op">}</span>!"</span>
+
+risultato = <span class="fn">saluta</span>(<span class="str">"Mario"</span>)   <span class="cm"># Ciao, Mario!</span>
+<span class="kw">print</span>(risultato)</div>
+<h3>Parametri avanzati</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># Parametri di default</span>
+<span class="kw">def</span> <span class="fn">connetti</span>(host, porta=<span class="num">8080</span>, ssl=<span class="kw">False</span>):
+    <span class="kw">return</span> <span class="str">f"<span class="op">{</span>'https' if ssl else 'http'<span class="op">}</span>://<span class="op">{</span>host<span class="op">}</span>:<span class="op">{</span>porta<span class="op">}</span>"</span>
+
+<span class="kw">print</span>(<span class="fn">connetti</span>(<span class="str">"localhost"</span>))           <span class="cm"># http://localhost:8080</span>
+<span class="kw">print</span>(<span class="fn">connetti</span>(<span class="str">"api.mio.sito"</span>, <span class="num">443</span>, <span class="kw">True</span>)) <span class="cm"># https://api.mio.sito:443</span>
+
+<span class="cm"># *args — numero variabile di argomenti</span>
+<span class="kw">def</span> <span class="fn">somma</span>(*numeri):
+    <span class="kw">return</span> <span class="fn">sum</span>(numeri)
+
+<span class="kw">print</span>(<span class="fn">somma</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>))   <span class="cm"># 15</span>
+
+<span class="cm"># **kwargs — keyword arguments variabili</span>
+<span class="kw">def</span> <span class="fn">mostra_info</span>(**dati):
+    <span class="kw">for</span> chiave, valore <span class="kw">in</span> dati.items():
+        <span class="kw">print</span>(<span class="str">f"  <span class="op">{</span>chiave<span class="op">}</span>: <span class="op">{</span>valore<span class="op">}</span>"</span>)
+
+<span class="fn">mostra_info</span>(nome=<span class="str">"Mario"</span>, eta=<span class="num">25</span>, citta=<span class="str">"Roma"</span>)</div>
+<h3>Funzioni come oggetti (first-class)</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># Le funzioni si possono passare come argomenti</span>
+<span class="kw">def</span> <span class="fn">applica</span>(funzione, valore):
+    <span class="kw">return</span> funzione(valore)
+
+quadrato = <span class="kw">lambda</span> x: x**<span class="num">2</span>
+<span class="kw">print</span>(<span class="fn">applica</span>(quadrato, <span class="num">5</span>))  <span class="cm"># 25</span>
+<span class="kw">print</span>(<span class="fn">applica</span>(<span class="fn">str</span>.upper, <span class="str">"ciao"</span>))  <span class="cm"># CIAO</span></div>
+`
+  },
+  py_lists: {
+    badge:'PYTHON — LEZIONE 08',
+    title:'Liste',
+    body:`
+<p>Le <strong>liste</strong> sono la struttura dati più usata in Python. Sono sequenze ordinate e mutabili che possono contenere qualsiasi tipo di dato.</p>
+<h3>Creare e accedere</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>frutti = [<span class="str">"mela"</span>, <span class="str">"banana"</span>, <span class="str">"pera"</span>, <span class="str">"kiwi"</span>]
+
+<span class="cm"># Accesso per indice (0-based)</span>
+<span class="kw">print</span>(frutti[<span class="num">0</span>])    <span class="cm"># mela</span>
+<span class="kw">print</span>(frutti[-<span class="num">1</span>])   <span class="cm"># kiwi (ultimo)</span>
+<span class="kw">print</span>(frutti[-<span class="num">2</span>])   <span class="cm"># pera (penultimo)</span>
+
+<span class="cm"># Slicing [start:stop:step]</span>
+<span class="kw">print</span>(frutti[<span class="num">1</span>:<span class="num">3</span>])   <span class="cm"># ['banana', 'pera']</span>
+<span class="kw">print</span>(frutti[::<span class="num">-1</span>]) <span class="cm"># lista rovesciata</span></div>
+<h3>Metodi fondamentali</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>numeri = [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>, <span class="num">9</span>, <span class="num">2</span>, <span class="num">6</span>]
+
+numeri.append(<span class="num">7</span>)        <span class="cm"># aggiunge in fondo</span>
+numeri.insert(<span class="num">0</span>, <span class="num">0</span>)     <span class="cm"># inserisce in posizione</span>
+numeri.remove(<span class="num">1</span>)        <span class="cm"># rimuove prima occorrenza</span>
+ultimo = numeri.pop()    <span class="cm"># rimuove e restituisce l'ultimo</span>
+numeri.sort()            <span class="cm"># ordina in-place</span>
+numeri.reverse()         <span class="cm"># rovescia in-place</span>
+
+<span class="kw">print</span>(<span class="fn">len</span>(numeri))       <span class="cm"># lunghezza</span>
+<span class="kw">print</span>(<span class="fn">max</span>(numeri))       <span class="cm"># massimo</span>
+<span class="kw">print</span>(<span class="fn">min</span>(numeri))       <span class="cm"># minimo</span>
+<span class="kw">print</span>(<span class="fn">sum</span>(numeri))       <span class="cm"># somma</span></div>
+<h3>List Comprehension</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># Modo tradizionale</span>
+quadrati = []
+<span class="kw">for</span> n <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+    quadrati.append(n**<span class="num">2</span>)
+
+<span class="cm"># List comprehension — più elegante e veloce!</span>
+quadrati = [n**<span class="num">2</span> <span class="kw">for</span> n <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>)]
+pari = [n <span class="kw">for</span> n <span class="kw">in</span> <span class="fn">range</span>(<span class="num">20</span>) <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">0</span>]
+maiuscole = [s.upper() <span class="kw">for</span> s <span class="kw">in</span> frutti]
+
+<span class="kw">print</span>(quadrati)  <span class="cm"># [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</span>
+<span class="kw">print</span>(pari)      <span class="cm"># [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]</span></div>
+`
+  },
+  py_oop: {
+    badge:'PYTHON — LEZIONE 16',
+    title:'OOP — Classi e Oggetti',
+    body:`
+<p>La <strong>Programmazione Orientata agli Oggetti</strong> organizza il codice in entità (oggetti) che combinano dati e comportamenti. È il paradigma più usato nel software moderno.</p>
+<h3>Definire una classe</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">class</span> <span class="tp">Auto</span>:
+    <span class="cm"># Attributo di classe (condiviso da tutte le istanze)</span>
+    ruote = <span class="num">4</span>
+    
+    <span class="cm"># Costruttore — chiamato quando si crea l'oggetto</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, marca, modello, anno):
+        <span class="cm"># Attributi di istanza</span>
+        self.marca = marca
+        self.modello = modello
+        self.anno = anno
+        self.km = <span class="num">0</span>          <span class="cm"># valore iniziale</    </span>
+    
+    <span class="cm"># Metodo</span>
+    <span class="kw">def</span> <span class="fn">guida</span>(self, distanza):
+        self.km += distanza
+        <span class="kw">return</span> <span class="str">f"Guidato <span class="op">{</span>distanza<span class="op">}</span> km. Totale: <span class="op">{</span>self.km<span class="op">}</span> km"</span>
+    
+    <span class="cm"># __str__ — rappresentazione leggibile</span>
+    <span class="kw">def</span> <span class="fn">__str__</span>(self):
+        <span class="kw">return</span> <span class="str">f"<span class="op">{</span>self.marca<span class="op">}</span> <span class="op">{</span>self.modello<span class="op">}</span> (<span class="op">{</span>self.anno<span class="op">}</span>)"</span>
+
+<span class="cm"># Creare istanze</span>
+mia_auto = <span class="tp">Auto</span>(<span class="str">"Fiat"</span>, <span class="str">"Punto"</span>, <span class="num">2020</span>)
+<span class="kw">print</span>(mia_auto)                  <span class="cm"># Fiat Punto (2020)</span>
+<span class="kw">print</span>(mia_auto.guida(<span class="num">150</span>))      <span class="cm"># Guidato 150 km...</span>
+<span class="kw">print</span>(<span class="tp">Auto</span>.ruote)                <span class="cm"># 4</span></div>
+<h3>Ereditarietà base</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">class</span> <span class="tp">AutoElettrica</span>(<span class="tp">Auto</span>):   <span class="cm"># eredita da Auto</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, marca, modello, anno, batteria_kwh):
+        <span class="fn">super</span>().__init__(marca, modello, anno)  <span class="cm"># chiama Auto.__init__</span>
+        self.batteria_kwh = batteria_kwh
+    
+    <span class="kw">def</span> <span class="fn">ricarica</span>(self):
+        <span class="kw">return</span> <span class="str">f"Ricarica <span class="op">{</span>self.batteria_kwh<span class="op">}</span> kWh completata! ⚡"</span>
+
+tesla = <span class="tp">AutoElettrica</span>(<span class="str">"Tesla"</span>, <span class="str">"Model 3"</span>, <span class="num">2023</span>, <span class="num">75</span>)
+<span class="kw">print</span>(tesla)           <span class="cm"># Tesla Model 3 (2023)</span>
+<span class="kw">print</span>(tesla.ricarica()) <span class="cm"># Ricarica 75 kWh...</span>
+<span class="kw">print</span>(tesla.guida(<span class="num">300</span>)) <span class="cm"># eredita il metodo guida!</span></div>
+`
+  },
+  js_vars: {
+    badge:'JAVASCRIPT — LEZIONE 02',
+    title:'let, const e var',
+    body:`
+<p>JavaScript ha tre modi per dichiarare variabili. Nel codice moderno userai quasi sempre <strong>const</strong> e <strong>let</strong>.</p>
+<h3>const — Valore costante</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm">// const: non può essere riassegnata</span>
+<span class="kw">const</span> PI = <span class="num">3.14159</span>;
+<span class="kw">const</span> nome = <span class="str">"Mario"</span>;
+<span class="cm">// PI = 3.14;  // ❌ TypeError!</span>
+
+<span class="cm">// Attenzione: oggetti e array POSSONO essere mutati</span>
+<span class="kw">const</span> persona = { nome: <span class="str">"Mario"</span>, eta: <span class="num">25</span> };
+persona.eta = <span class="num">26</span>;  <span class="cm">// ✓ OK — muta la proprietà</span>
+<span class="cm">// persona = {};  // ❌ TypeError — riassegnazione</span></div>
+<h3>let — Variabile mutabile</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm">// let: può essere riassegnata, scope di blocco</span>
+<span class="kw">let</span> punteggio = <span class="num">0</span>;
+punteggio = punteggio + <span class="num">10</span>;  <span class="cm">// ✓ OK</span>
+punteggio += <span class="num">5</span>;              <span class="cm">// ✓ shorthand</span>
+
+<span class="cm">// Block scope</span>
+<span class="kw">if</span> (<span class="kw">true</span>) {
+    <span class="kw">let</span> x = <span class="num">42</span>;
+    <span class="kw">const</span> y = <span class="num">10</span>;
+}
+<span class="cm">// console.log(x);  // ❌ ReferenceError — fuori scope</span></div>
+<h3>var — Legacy (evitalo!)</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm">// var: function scope, hoisting, PROBLEMI</span>
+<span class="kw">console</span>.<span class="fn">log</span>(x);  <span class="cm">// undefined (hoisted!)</span>
+<span class="kw">var</span> x = <span class="num">5</span>;
+<span class="kw">var</span> x = <span class="num">10</span>;  <span class="cm">// re-dichiarazione permessa 🤢</span>
+
+<span class="cm">// 💡 Regola d'oro 2024:</span>
+<span class="cm">// → usa const per default</span>
+<span class="cm">// → usa let solo se hai bisogno di riassegnare</span>
+<span class="cm">// → MAI usare var in codice moderno</span></div>
+`
+  },
+  css_flex: {
+    badge:'HTML & CSS — LEZIONE 10',
+    title:'Flexbox',
+    body:`
+<p><strong>Flexbox</strong> è il sistema di layout 1D di CSS. Permette di distribuire e allineare elementi lungo un asse (riga o colonna) con facilità incredibile.</p>
+<h3>Proprietà del container</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>.container {
+    display: flex;                    /* attiva flexbox */
+    
+    flex-direction: row;              /* row | column | row-reverse */
+    justify-content: space-between;   /* distribuzione sull'asse principale */
+    <span class="cm">/* flex-start | flex-end | center | space-around | space-evenly */</span>
+    
+    align-items: center;              /* allineamento sull'asse trasversale */
+    <span class="cm">/* flex-start | flex-end | stretch | baseline */</span>
+    
+    flex-wrap: wrap;                  /* torna a capo se non c'è spazio */
+    gap: 1rem;                        /* spazio tra elementi */
+}</div>
+<h3>Proprietà degli item</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button>.item {
+    flex: 1;          /* shorthand per flex-grow: 1 */
+    <span class="cm">/* flex: grow shrink basis */</span>
+    flex: 1 1 200px;  /* cresce, shrinka, base 200px */
+    
+    align-self: flex-end;  /* override dell'allineamento */
+    order: 2;              /* cambia l'ordine visuale */
+}
+
+<span class="cm">/* Centra perfettamente qualsiasi cosa */</span>
+.centrato {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}</div>
+<h3>Pattern comuni</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm">/* Navbar: logo a sinistra, link a destra */</span>
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+}
+
+<span class="cm">/* Card layout con colonne uguali */</span>
+.card-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.card {
+    flex: 1 1 250px;  /* min 250px, cresce uguale */
+}</div>
+`
+  },
+  algo_bigo: {
+    badge:'ALGORITMI — LEZIONE 01',
+    title:'Notazione Big-O',
+    body:`
+<p>La <strong>notazione Big-O</strong> descrive come cresce il tempo di esecuzione (o spazio) di un algoritmo al crescere dell'input. È il linguaggio con cui i programmatori parlano di efficienza.</p>
+<h3>Le complessità principali</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># O(1) — Costante: sempre la stessa velocità</span>
+<span class="kw">def</span> <span class="fn">primo_elemento</span>(lista):
+    <span class="kw">return</span> lista[<span class="num">0</span>]  <span class="cm"># indipendente dalla dimensione</span>
+
+<span class="cm"># O(n) — Lineare: cresce proporzionalmente</span>
+<span class="kw">def</span> <span class="fn">cerca_valore</span>(lista, target):
+    <span class="kw">for</span> x <span class="kw">in</span> lista:       <span class="cm"># nel peggiore: n iterazioni</span>
+        <span class="kw">if</span> x == target:
+            <span class="kw">return</span> <span class="kw">True</span>
+    <span class="kw">return</span> <span class="kw">False</span>
+
+<span class="cm"># O(n²) — Quadratica: loop innestato</span>
+<span class="kw">def</span> <span class="fn">bubble_sort</span>(lista):
+    n = <span class="fn">len</span>(lista)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n - i - <span class="num">1</span>):  <span class="cm"># n*n = n²</span>
+            <span class="kw">if</span> lista[j] > lista[j+<span class="num">1</span>]:
+                lista[j], lista[j+<span class="num">1</span>] = lista[j+<span class="num">1</span>], lista[j]
+
+<span class="cm"># O(log n) — Logaritmica: dimezza ad ogni passo</span>
+<span class="kw">def</span> <span class="fn">ricerca_binaria</span>(lista, target):
+    sx, dx = <span class="num">0</span>, <span class="fn">len</span>(lista) - <span class="num">1</span>
+    <span class="kw">while</span> sx <= dx:
+        mid = (sx + dx) // <span class="num">2</span>
+        <span class="kw">if</span> lista[mid] == target: <span class="kw">return</span> mid
+        <span class="kw">elif</span> lista[mid] < target: sx = mid + <span class="num">1</span>
+        <span class="kw">else</span>: dx = mid - <span class="num">1</span>
+    <span class="kw">return</span> -<span class="num">1</span></div>
+<h3>Confronto pratico</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm"># n = 1.000.000 elementi:</span>
+<span class="cm"># O(1)       →   1 operazione</span>
+<span class="cm"># O(log n)   →  20 operazioni</span>
+<span class="cm"># O(n)       →   1.000.000 operazioni</span>
+<span class="cm"># O(n log n) →  20.000.000 operazioni</span>
+<span class="cm"># O(n²)      →   10¹² operazioni (evitare!)</span>
+
+<span class="cm"># Regola pratica: O(n log n) è ottimo per sorting</span>
+<span class="cm"># O(n²) è spesso troppo lento con dati reali</span></div>
+`
+  },
+  sql_select: {
+    badge:'SQL — LEZIONE 02',
+    title:'SELECT — Interrogare il database',
+    body:`
+<p>Il comando <strong>SELECT</strong> è il cuore di SQL. Serve per estrarre dati da una o più tabelle. Impara SELECT e hai la chiave per qualsiasi database.</p>
+<h3>Sintassi base</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">-- Seleziona tutte le colonne</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> studenti;
+
+<span class="kw">-- Seleziona colonne specifiche</span>
+<span class="kw">SELECT</span> nome, cognome, voto_medio
+<span class="kw">FROM</span> studenti;
+
+<span class="kw">-- Rinomina colonne (alias)</span>
+<span class="kw">SELECT</span> nome <span class="kw">AS</span> <span class="str">"Nome Studente"</span>,
+       voto_medio <span class="kw">AS</span> voto
+<span class="kw">FROM</span> studenti;
+
+<span class="kw">-- Espressioni calcolate</span>
+<span class="kw">SELECT</span> nome,
+       voto_medio * <span class="num">10</span> <span class="kw">AS</span> voto_percentuale
+<span class="kw">FROM</span> studenti;</div>
+<h3>Filtrare con WHERE</h3>
+<div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="kw">-- Condizione semplice</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> studenti
+<span class="kw">WHERE</span> voto_medio >= <span class="num">8.0</span>;
+
+<span class="kw">-- Più condizioni</span>
+<span class="kw">SELECT</span> nome, cognome, eta
+<span class="kw">FROM</span> studenti
+<span class="kw">WHERE</span> eta BETWEEN <span class="num">20</span> <span class="kw">AND</span> <span class="num">25</span>
+  <span class="kw">AND</span> voto_medio > <span class="num">7</span>;
+
+<span class="kw">-- Pattern matching con LIKE</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> studenti
+<span class="kw">WHERE</span> nome LIKE <span class="str">'M%'</span>;    <span class="cm">-- inizia con M</span>
+
+<span class="kw">-- Ordinamento</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> studenti
+<span class="kw">ORDER BY</span> voto_medio <span class="kw">DESC</span>, nome <span class="kw">ASC</span>
+<span class="kw">LIMIT</span> <span class="num">5</span>;</div>
+`
+  },
+};
+
+// ════════════════════════════════════════════
+//  QUIZ DATA (15 domande)
+// ════════════════════════════════════════════
+const QUIZ_DATA = [
+  {q:'Cosa stampa questo codice Python?\n\nprint(10 // 3)', code:true, opts:['3','3.33...','1','0'], ans:0, fb:'// è la divisione intera (floor division). 10 // 3 = 3 (scarta il resto).'},
+  {q:'Qual è la differenza tra == e === in JavaScript?', opts:['Nessuna differenza','=== confronta tipo E valore, == solo valore','== è più veloce','=== funziona solo con numeri'], ans:1, fb:'=== è strict equality: confronta sia tipo che valore. == fa coercizione di tipo. Usa sempre === in JS moderno.'},
+  {q:'Cosa significa "DRY" in programmazione?', opts:["Don't Repeat Yourself","Dynamic Runtime Yield","Do Reduce Yesterday","Direct Reference Yield"], ans:0, fb:"DRY = Don't Repeat Yourself. Evita duplicazione del codice — scrivi la logica una volta sola."},
+  {q:'In Python, qual è il risultato di?\n\n[x**2 for x in range(4)]', code:true, opts:['[0,1,4,9]','[1,4,9,16]','[0,1,2,3]','Error'], ans:0, fb:'List comprehension: range(4) produce 0,1,2,3. Al quadrato: 0,1,4,9. Inizia sempre da 0!'},
+  {q:'Quale tag HTML è usato per un link?', opts:['<link>','<a href="">','<url>','<href>'], ans:1, fb:'Il tag <a> (anchor) con l\'attributo href definisce i collegamenti ipertestuali. <link> è per CSS nel <head>.'},
+  {q:'Qual è la complessità di Big-O della ricerca binaria?', opts:['O(n)','O(n²)','O(log n)','O(1)'], ans:2, fb:'La ricerca binaria dimezza lo spazio di ricerca ad ogni passo → O(log n). Con 1 milione di elementi bastano ~20 confronti!'},
+  {q:'In CSS, quale proprietà allinea gli elementi orizzontalmente in Flexbox?', opts:['align-items','justify-content','flex-direction','align-content'], ans:1, fb:'justify-content gestisce l\'asse principale (orizzontale in flex-direction:row). align-items gestisce l\'asse trasversale.'},
+  {q:'Cosa fa "const" in JavaScript?\n\nconst arr = [1,2,3];\narr.push(4);', code:true, opts:['Errore — const non può cambiare','Funziona — push modifica il contenuto, non la variabile','Crea una copia','Converte in stringa'], ans:1, fb:'const impedisce la RIASSEGNAZIONE della variabile, non la mutazione dell\'oggetto/array. arr.push() modifica il contenuto, non la referenza.'},
+  {q:'In SQL, quale comando si usa per estrarre dati?', opts:['GET','FETCH','SELECT','RETRIEVE'], ans:2, fb:'SELECT è il comando fondamentale per interrogare i dati in SQL. La struttura base è: SELECT colonne FROM tabella WHERE condizioni.'},
+  {q:'Cosa è l\'ereditarietà in OOP?', opts:['Copiare il codice di un\'altra classe','Una classe che usa le proprietà di un\'altra classe come base','Un tipo di variabile','Un metodo statico'], ans:1, fb:'L\'ereditarietà permette a una classe figlia di acquisire comportamenti e attributi della classe genitore, riducendo la duplicazione.'},
+  {q:'Qual è l\'output di questo codice Python?\n\nx = [1,2,3]\ny = x\ny.append(4)\nprint(x)', code:true, opts:['[1,2,3]','[1,2,3,4]','[4]','Error'], ans:1, fb:'In Python, y = x NON crea una copia — entrambe le variabili puntano allo stesso oggetto in memoria. Per copiare: y = x.copy() o y = list(x).'},
+  {q:'Qual è la proprietà CSS per creare un layout a griglia?', opts:['display: flex','display: table','display: grid','display: block'], ans:2, fb:'display: grid attiva il CSS Grid Layout, il sistema di layout 2D più potente di CSS. Permette di creare layout complessi con righe e colonne.'},
+  {q:'In JavaScript, cosa restituisce typeof null?', opts:['"null"','"undefined"','"object"','"boolean"'], ans:2, fb:'Questo è un famoso bug storico di JavaScript! typeof null restituisce "object" invece di "null". È rimasto per compatibilità retroattiva da 30 anni.'},
+  {q:'Qual è la sintassi corretta per una funzione arrow in JS?', opts:['function(x) => x*2','(x) -> x*2','const f = (x) => x*2','def f(x): return x*2'], ans:2, fb:'Le arrow function in ES6: const nomeFunzione = (parametri) => espressione. Per blocchi multipli si usano le parentesi graffe.'},
+  {q:'In Python, cosa fa __init__?', opts:['Importa moduli','È il costruttore della classe — chiamato alla creazione dell\'oggetto','Distrugge l\'oggetto','È una variabile speciale'], ans:1, fb:'__init__ è il costruttore di Python. Viene chiamato automaticamente quando si crea una nuova istanza con NomeClasse(). È dove si inizializzano gli attributi.'},
+];
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
+  if (name === 'curriculum') renderCurriculum();
+  if (name === 'quiz') initQuiz();
+}
+
+// ════════════════════════════════════════════
+//  IDE ENGINE
+// ════════════════════════════════════════════
+let currentLang = 'html';
+let wrapMode = false;
+let userEdits = {};
+
+function switchLang(lang, el) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  
+  const L = LANGS[lang];
+  document.getElementById('codeEditor').value = userEdits[lang] || L.code;
+  document.getElementById('tabDot').style.background = L.color;
+  document.getElementById('tabName').textContent = L.file;
+  document.getElementById('langIndicatorTxt').textContent = L.name;
+  document.getElementById('statusLang').textContent = L.name;
+  document.querySelector('.lang-indicator').style.setProperty('--lang-c', L.color);
+  document.getElementById('langIndicator').style.setProperty('color', L.color);
+  
+  // Show/hide preview tab
+  const prevTab = document.getElementById('outTabPreview');
+  prevTab.style.opacity = L.preview ? '1' : '0.4';
+  prevTab.style.pointerEvents = L.preview ? 'auto' : 'none';
+  
+  updateGutter();
+  updateStatusBar();
+  // Reset output
+  switchOutTab('console');
+  setConsoleHtml('<span class="cl-info">// ' + L.name + ' pronto. Premi RUN.</span><br><span class="cl-normal"><span class="cursor-blink"></span></span>');
+}
+
+function onCodeInput() {
+  userEdits[currentLang] = document.getElementById('codeEditor').value;
+  updateGutter();
+  updateStatusBar();
+}
+
+function updateGutter() {
+  const code = document.getElementById('codeEditor').value;
+  const lines = code.split('\n').length;
+  const g = document.getElementById('gutterEl');
+  g.innerHTML = Array.from({length: lines}, (_,i) => `<span>${i+1}</span>`).join('');
+}
+
+function updateStatusBar() {
+  const code = document.getElementById('codeEditor').value;
+  const lines = code.split('\n').length;
+  const chars = code.length;
+  document.getElementById('statusLines').textContent = `${lines} ${lines === 1 ? 'riga' : 'righe'}`;
+  document.getElementById('statusChars').textContent = `${chars} chars`;
+}
+
+function updateCursor(e) {
+  const ta = document.getElementById('codeEditor');
+  const text = ta.value.substring(0, ta.selectionStart);
+  const row = text.split('\n').length;
+  const col = text.split('\n').pop().length + 1;
+  document.getElementById('cursorPos').textContent = `${row}:${col}`;
+}
+
+function onKeyDown(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target;
+    const s = ta.selectionStart, end = ta.selectionEnd;
+    ta.value = ta.value.substring(0,s) + '  ' + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = s + 2;
+    onCodeInput();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCode();
+}
+
+function toggleWrap() {
+  wrapMode = !wrapMode;
+  const ta = document.getElementById('codeEditor');
+  ta.style.whiteSpace = wrapMode ? 'pre-wrap' : 'pre';
+  document.getElementById('wrapBtn').style.color = wrapMode ? 'var(--accent)' : '';
+}
+
+function setConsoleHtml(html) {
+  document.getElementById('consoleOut').innerHTML = html;
+}
+
+function addConsoleLine(cls, text) {
+  const c = document.getElementById('consoleOut');
+  const el = document.createElement('span');
+  el.className = cls;
+  el.textContent = text;
+  c.appendChild(el);
+  c.appendChild(document.createElement('br'));
+  c.scrollTop = c.scrollHeight;
+}
+
+let outTab = 'console';
+function switchOutTab(tab) {
+  outTab = tab;
+  document.getElementById('outTabConsole').classList.toggle('active', tab === 'console');
+  document.getElementById('outTabPreview').classList.toggle('active', tab === 'preview');
+  document.getElementById('consoleOut').classList.toggle('hidden', tab === 'preview');
+  document.getElementById('previewFrame').classList.toggle('show', tab === 'preview');
+}
+
+function runCode() {
+  const code = document.getElementById('codeEditor').value;
+  const L = LANGS[currentLang];
+  const btn = document.getElementById('runBtn');
+  const t0 = performance.now();
+  
+  btn.innerHTML = '<span>⟳</span> RUNNING...';
+  btn.style.background = 'var(--accent3)';
+  
+  const delay = 400;
+  setTimeout(() => {
+    btn.innerHTML = '<span>▶</span> RUN';
+    btn.style.background = '';
+    const dt = Math.round(performance.now() - t0);
+    document.getElementById('runTime').textContent = `${dt}ms`;
+    
+    if (L.preview) {
+      // HTML/CSS preview
+      document.getElementById('previewFrame').srcdoc = code;
+      switchOutTab('preview');
+      setConsoleHtml('<span class="cl-success">✓ Pagina renderizzata nel pannello Preview →</span><br><span class="cl-info">// Controlla il tab Preview per vedere il risultato.</span>');
+      notify('✓', 'Preview aggiornata!');
+    } else {
+      switchOutTab('console');
+      executeCode(code, currentLang);
+    }
+  }, delay);
+}
+
+function executeCode(code, lang) {
+  setConsoleHtml('');
+  
+  const handlers = {
+    js: runJS,
+    py: runPY,
+    java: runJAVA,
+    cpp: runCPP,
+    rust: runRUST,
+    sql: runSQL,
+    bash: runBASH,
+    php: runPHP,
+  };
+  
+  const fn = handlers[lang];
+  if (fn) fn(code);
+  else {
+    addConsoleLine('cl-info', '// Linguaggio: ' + LANGS[lang].name);
+    addConsoleLine('cl-muted', '// Esecuzione simulata — output di esempio');
+    addConsoleLine('cl-success', '✓ Codice valido, nessun errore rilevato');
+  }
+  
+  addConsoleLine('cl-muted', '');
+  addConsoleLine('cl-info', `// ─── Esecuzione completata ───`);
+  addConsoleLine('cl-normal', '');
+  
+  const c = document.getElementById('consoleOut');
+  const cur = document.createElement('span');
+  cur.className = 'cl-normal';
+  cur.innerHTML = '<span class="cursor-blink"></span>';
+  c.appendChild(cur);
+}
+
+function runJS(code) {
+  const logs = [];
+  const fake = {
+    log: (...args) => logs.push({t:'cl-normal', v:args.map(a => fmt(a)).join(' ')}),
+    error: (...args) => logs.push({t:'cl-error', v:'✗ ' + args.map(a=>String(a)).join(' ')}),
+    warn: (...args) => logs.push({t:'cl-warn', v:'⚠ ' + args.map(a=>String(a)).join(' ')}),
+    info: (...args) => logs.push({t:'cl-info', v:'ℹ ' + args.map(a=>String(a)).join(' ')}),
+  };
+  function fmt(v) {
+    if (v === null) return 'null';
+    if (v === undefined) return 'undefined';
+    if (Array.isArray(v)) return '[' + v.map(fmt).join(', ') + ']';
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  }
+  try {
+    const fn = new Function('console', code);
+    fn(fake);
+    logs.forEach(l => addConsoleLine(l.t, l.v));
+    if (logs.length === 0) addConsoleLine('cl-muted', '// Nessun output (nessun console.log trovato)');
+  } catch(e) {
+    addConsoleLine('cl-error', '✗ ' + e.constructor.name + ': ' + e.message);
+  }
+}
+
+function runPY(code) {
+  // Python simulation
+  const output = [];
+  const lines = code.split('\n');
+  
+  // Simple print simulation
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('#')) continue;
+    
+    const printMatch = trimmed.match(/^print\((.*)\)$/);
+    if (printMatch) {
+      let content = printMatch[1];
+      try {
+        // f-string basic simulation
+        content = content
+          .replace(/^f["'](.+)["']$/, '$1')
+          .replace(/^["'](.+)["']$/, '$1');
+        // Replace simple expressions
+        content = content.replace(/\{(\w+)\}/g, (_, name) => {
+          const m = code.match(new RegExp(`^${name}\\s*=\\s*(.+)$`, 'm'));
+          if (m) return m[1].replace(/["']/g,'').trim();
+          return name;
+        });
+        output.push({t:'cl-normal', v: content});
+      } catch(e) {
+        output.push({t:'cl-error', v:'Error: ' + e.message});
+      }
+    }
+  }
+  
+  // Hardcoded common patterns for better demo
+  if (code.includes('Hello, World!')) output.push({t:'cl-success', v:'Hello, World!'});
+  if (code.includes('Ciao') && code.includes('Mario')) output.push({t:'cl-normal', v:'Ciao Mario! 👋'});
+  if (code.includes('fattoriale') && code.includes('range(1, 8)')) {
+    const facts = [1,1,2,6,24,120,720];
+    for(let i=1;i<=7;i++) output.push({t:'cl-normal', v:`${i}! = ${facts[i-1]}`});
+  }
+  if (code.includes('gatto.parla')) output.push({t:'cl-normal', v:'Gatto dice: Miao!'});
+  if (code.includes('cane.parla')) output.push({t:'cl-normal', v:'Cane dice: Bau!'});
+  if (code.includes('pari = [')) output.push({t:'cl-normal', v:'Pari: [2, 4, 10, 20]'});
+  if (code.includes('Somma: ')) output.push({t:'cl-normal', v:'Somma: 60'});
+  
+  const unique = [];
+  const seen = new Set();
+  for (const l of output) {
+    if (!seen.has(l.v)) { seen.add(l.v); unique.push(l); }
+  }
+  
+  if (unique.length > 0) unique.forEach(l => addConsoleLine(l.t, l.v));
+  else addConsoleLine('cl-muted', '// Modifica il codice e premi RUN per vedere l\'output Python simulato.');
+}
+
+function runJAVA(code) {
+  addConsoleLine('cl-info', '// Java 21 — Output simulato:');
+  addConsoleLine('cl-normal', '=== Java Demo ===');
+  if (code.includes('printf')) addConsoleLine('cl-normal','Nome: Mario, Età: 30, PI: 3.1416');
+  if (code.includes('somma.esegui')) addConsoleLine('cl-normal','3 + 4 = 7');
+  if (code.includes('prodotto.esegui')) addConsoleLine('cl-normal','3 * 4 = 12');
+  if (code.includes('sommaPari')) addConsoleLine('cl-normal','Somma pari: 30');
+  if (code.includes('persona.saluta')) addConsoleLine('cl-normal','Ciao, sono Sofia (25 anni)');
+  if (code.includes('fibonacci')) addConsoleLine('cl-normal','Fibonacci: 0 1 1 2 3 5 8 13 21 34');
+  addConsoleLine('cl-success','✓ Compilazione ed esecuzione completata');
+}
+
+function runCPP(code) {
+  addConsoleLine('cl-info', '// C++20 — Output simulato:');
+  addConsoleLine('cl-normal', '=== C++ Demo ===');
+  if (code.includes('Hello, C++')) addConsoleLine('cl-normal','Hello, C++!');
+  if (code.includes('x = ')) addConsoleLine('cl-normal','x = 42, pi = 3.14159');
+  if (code.includes('Max(3, 7)')) addConsoleLine('cl-normal','Max(3, 7) = 7');
+  if (code.includes('Max(3.14')) addConsoleLine('cl-normal','Max(3.14, 2.71) = 3.14');
+  if (code.includes('sort(')) addConsoleLine('cl-normal','Ordinato: 1 2 3 4 5 6 7 8 9');
+  if (code.includes('somma')) addConsoleLine('cl-normal','Somma: 45');
+  if (code.includes('Anna')) addConsoleLine('cl-normal','Anna: 9\nMarco: 7\nSofia: 10');
+  addConsoleLine('cl-success','✓ Compilato con g++ -std=c++20 -O2');
+}
+
+function runRUST(code) {
+  addConsoleLine('cl-info', '// Rust 1.78 — Output simulato:');
+  addConsoleLine('cl-normal', '=== Rust Demo ===');
+  if (code.includes('Hello, Rust!')) addConsoleLine('cl-normal','Hello, Rust! (lunghezza: 12)');
+  if (code.includes('rect.area')) addConsoleLine('cl-normal','Area: 15.00, Perimetro: 16.00');
+  if (code.includes('quadrato')) addConsoleLine('cl-normal','È quadrato: false');
+  if (code.includes('Forma::Cerchio')) addConsoleLine('cl-normal','Area: 78.54\nArea: 24.00\nArea: 6.00');
+  if (code.includes('fattoriale')) {
+    for(let i=1;i<=8;i++) {
+      const facts = [1,2,6,24,120,720,5040,40320];
+      addConsoleLine('cl-normal', `${i}! = ${facts[i-1]}`);
+    }
+  }
+  if (code.includes('somma')) addConsoleLine('cl-normal','Somma pari 1-10: 30');
+  addConsoleLine('cl-success','✓ Compilato con rustc --edition 2021');
+}
+
+function runSQL(code) {
+  addConsoleLine('cl-info', '// SQLite — Query eseguite:');
+  if (code.includes('SELECT')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-accent','nome        | cognome   | eta | voto_medio');
+    addConsoleLine('cl-muted', '─────────────────────────────────────────');
+    addConsoleLine('cl-normal','Anna        | Esposito  | 23  | 9.8');
+    addConsoleLine('cl-normal','Sofia       | Bianchi   | 24  | 9.2');
+    addConsoleLine('cl-normal','Mario       | Rossi     | 22  | 8.5');
+    addConsoleLine('cl-normal','Luca        | Ferrari   | 21  | 7.8');
+    addConsoleLine('cl-muted', '');
+    addConsoleLine('cl-success','✓ 4 righe restituite');
+  }
+  if (code.includes('COUNT')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-accent','totale | media_classe | massimo | minimo');
+    addConsoleLine('cl-muted', '────────────────────────────────────────');
+    addConsoleLine('cl-normal','4      | 8.83         | 9.8     | 7.8');
+  }
+  if (code.includes('valutazione')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-accent','studente          | voto | valutazione');
+    addConsoleLine('cl-muted', '────────────────────────────────────────');
+    addConsoleLine('cl-normal','Anna Esposito      | 9.8  | Eccellente');
+    addConsoleLine('cl-normal','Sofia Bianchi      | 9.2  | Eccellente');
+    addConsoleLine('cl-normal','Mario Rossi        | 8.5  | Ottimo');
+  }
+}
+
+function runBASH(code) {
+  addConsoleLine('cl-normal','=== Bash Script Demo ===');
+  if (code.includes('VERSIONE')) addConsoleLine('cl-normal','Script: deploy.sh v1.0.0');
+  addConsoleLine('cl-normal','Data: 2025-01-01');
+  addConsoleLine('cl-normal','Utente: Mario');
+  if (code.includes('saluta')) addConsoleLine('cl-normal','Ciao, Mario! 👋');
+  if (code.includes('LINGUAGGI')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-normal','Linguaggi supportati:');
+    ['Python','JavaScript','Rust','C++','Java'].forEach(l => addConsoleLine('cl-normal', `  ✓ ${l}`));
+  }
+  if (code.includes('quadrato')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-normal','Calcoli:');
+    for(let i=1;i<=5;i++) addConsoleLine('cl-normal', `  ${i}² = ${i*i}`);
+  }
+  if (code.includes('PUNTEGGIO')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-normal','Valutazione: Buono 👍');
+  }
+  if (code.includes('Countdown')) {
+    addConsoleLine('cl-normal','');
+    addConsoleLine('cl-normal','Countdown:');
+    for(let i=5;i>=1;i--) addConsoleLine('cl-normal',`  ${i}...`);
+    addConsoleLine('cl-success','  🚀 LANCIO!');
+  }
+  addConsoleLine('cl-normal','');
+  addConsoleLine('cl-success','Script completato con successo! ✓');
+}
+
+function runPHP(code) {
+  addConsoleLine('cl-info', '// PHP 8.3 — Output simulato:');
+  addConsoleLine('cl-normal','=== PHP 8.3 Demo ===');
+  if (code.includes('$nome')) addConsoleLine('cl-normal','Nome: Mario, Età: 30');
+  if (code.includes('M_PI')) addConsoleLine('cl-normal','PI: 3.1416');
+  if (code.includes('Fattoriali')) addConsoleLine('cl-normal','Fattoriali:');
+  if (code.includes('fattoriale($i)')) {
+    const facts = [1,2,6,24,120,720,5040];
+    for(let i=1;i<=7;i++) addConsoleLine('cl-normal', `  ${i}! = ${facts[i-1]}`);
+  }
+  if (code.includes('implode')) addConsoleLine('cl-normal','\nArray:\n  Pari: 2, 4, 6, 8, 10\n  Somma: 55');
+  if (code.includes('saluta()')) addConsoleLine('cl-normal','\nCiao, sono Sofia (25 anni)!');
+  if (code.includes('invecchia')) addConsoleLine('cl-normal','Dopo un anno: 26 anni');
+  if (code.includes('Voto')) addConsoleLine('cl-normal','\nVoto 9: Ottimo!');
+  addConsoleLine('cl-normal','');
+  addConsoleLine('cl-success','Script PHP completato! ✓');
+}
+
+function clearCode() { document.getElementById('codeEditor').value = ''; userEdits[currentLang] = ''; updateGutter(); updateStatusBar(); }
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('codeEditor').value).then(() => notify('⎘', 'Codice copiato!'));
+}
+function resetCode() {
+  delete userEdits[currentLang];
+  document.getElementById('codeEditor').value = LANGS[currentLang].code;
+  updateGutter(); updateStatusBar();
+  notify('↺', 'Codice ripristinato');
+}
+
+// Init IDE
+window.addEventListener('load', () => {
+  document.getElementById('codeEditor').value = LANGS.html.code;
+  updateGutter(); updateStatusBar();
+  animateStats();
+});
+
+// ════════════════════════════════════════════
+//  CURRICULUM ENGINE
+// ════════════════════════════════════════════
+let activeTrack = 0;
+
+function renderCurriculum() {
+  const sidebar = document.getElementById('curSidebar');
+  const main = document.getElementById('curMain');
+  
+  // Sidebar
+  sidebar.innerHTML = '<div class="cur-sidebar-title">// Percorsi di studio</div>';
+  TRACKS.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'cur-track' + (i === activeTrack ? ' active' : '');
+    div.style.setProperty('--tc', t.color);
+    div.onclick = () => { activeTrack = i; renderCurriculum(); };
+    div.innerHTML = `
+      <div class="cur-track-icon">${t.icon}</div>
+      <div class="cur-track-info">
+        <div class="cur-track-name">${t.name}</div>
+        <div class="cur-track-meta">${t.lessons} lezioni • ${t.progress}% completato</div>
+        <div class="cur-track-prog"><div class="cur-track-prog-fill" style="width:${t.progress}%"></div></div>
+      </div>
+    `;
+    sidebar.appendChild(div);
+  });
+  
+  // Main content
+  const T = TRACKS[activeTrack];
+  const done = T.curriculum.filter(l => l.done).length;
+  
+  main.innerHTML = `
+    <div class="cur-header">
+      <div class="cur-lang-badge" style="--tc:${T.color}">
+        ${T.icon} ${T.name} — ${T.lessons} lezioni
+      </div>
+      <h1 class="cur-title">${T.name}</h1>
+      <p class="cur-desc">${T.desc}</p>
+      <div style="display:flex;align-items:center;gap:1rem;margin-top:1.5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted)">
+        <span>${done}/${T.lessons} completate</span>
+        <span>•</span>
+        <span>${T.progress}% progresso</span>
+        <span>•</span>
+        <span>~${Math.round(T.lessons * 25)} min totali</span>
+      </div>
+      <div class="cur-progress-bar" style="--tc:${T.color}">
+        <div class="cur-progress-fill" style="width:${T.progress}%"></div>
+      </div>
+    </div>
+    <div class="lessons-grid" id="lessonsGrid"></div>
+  `;
+  
+  const grid = document.getElementById('lessonsGrid');
+  T.curriculum.forEach((l, i) => {
+    const div = document.createElement('div');
+    const status = l.done ? 'done' : (l.current ? 'current' : 'open');
+    const statusLabel = l.done ? '✓ completata' : (l.current ? '▶ in corso' : 'disponibile');
+    const statusClass = l.done ? 'done' : (l.current ? 'current' : 'open');
+    
+    div.className = `lesson-card ${l.done ? 'done' : ''} ${l.current ? 'active-l' : ''}`;
+    div.style.setProperty('--tc', T.color);
+    div.onclick = () => openLessonModal(l, T);
+    div.innerHTML = `
+      <div class="lesson-n">${l.n}</div>
+      <div class="lesson-body">
+        <div class="lesson-title">${l.title}</div>
+        <div class="lesson-desc">${l.desc}</div>
+        <div class="lesson-tags">
+          ${l.tags.map(t => `<span class="lesson-tag">${t}</span>`).join('')}
+        </div>
+      </div>
+      <span class="lesson-status ${statusClass}">${statusLabel}</span>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function openLessonModal(lesson, track) {
+  const modal = MODALS[lesson.modal];
+  const content = document.getElementById('modalContent');
+  
+  if (modal) {
+    content.innerHTML = `
+      <div class="modal-badge">${modal.badge}</div>
+      <div class="modal-title">${modal.title}</div>
+      <div class="modal-body">${modal.body}</div>
+      <button class="modal-try-btn" onclick="goToIDE('${track.id}');document.getElementById('lessonModal').classList.remove('open')">
+        ▶ Apri nell'IDE
+      </button>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="modal-badge">${track.name} — LEZIONE ${lesson.n}</div>
+      <div class="modal-title">${lesson.title}</div>
+      <div class="modal-body">
+        <p>${lesson.desc}</p>
+        <br>
+        <p>Questa lezione è in preparazione 🚀</p>
+        <p>Premi il pulsante qui sotto per aprire l'IDE e iniziare a esplorare <strong>${track.name}</strong>!</p>
+        <div class="code-block"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="cm">// Apri l'IDE per iniziare a scrivere codice ${track.name}!</span></div>
+      </div>
+      <button class="modal-try-btn" onclick="goToIDE('${track.id}');document.getElementById('lessonModal').classList.remove('open')">
+        ▶ Apri ${track.name} nell'IDE
+      </button>
+    `;
+  }
+  document.getElementById('lessonModal').classList.add('open');
+}
+
+function goToIDE(langId) {
+  showPage('ide');
+  const langMap = {py:'py', js:'js', html:'html', cpp:'cpp', sql:'sql', algo:'py', bash:'bash'};
+  const target = langMap[langId] || 'py';
+  const el = document.querySelector(`[data-lang="${target}"]`);
+  if (el) switchLang(target, el);
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('lessonModal')) {
+    document.getElementById('lessonModal').classList.remove('open');
+  }
+}
+
+function copySnippet(btn) {
+  const block = btn.parentElement;
+  const text = block.textContent.replace('copy','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('lessonModal').classList.remove('open');
+});
+
+// ════════════════════════════════════════════
+//  QUIZ ENGINE
+// ════════════════════════════════════════════
+let qIdx = 0, qScore = 0, qAnswered = false;
+
+function initQuiz() {
+  qIdx = 0; qScore = 0; qAnswered = false;
+  renderQuizProgress();
+  renderQuestion();
+}
+
+function renderQuizProgress() {
+  const outer = document.getElementById('quizProgOuter');
+  outer.innerHTML = QUIZ_DATA.map((_, i) => `
+    <div class="qprog-seg ${i < qIdx ? 'done' : i === qIdx ? 'current' : ''}"></div>
+  `).join('');
+}
+
+function renderQuestion() {
+  if (qIdx >= QUIZ_DATA.length) {
+    showResult(); return;
+  }
+  const q = QUIZ_DATA[qIdx];
+  qAnswered = false;
+  renderQuizProgress();
+  
+  const opts = q.opts.map((o, i) => `
+    <button class="quiz-opt" id="qo${i}" onclick="answerQ(${i})">
+      <span class="opt-key">${String.fromCharCode(65+i)}</span>
+      ${o}
+    </button>
+  `).join('');
+  
+  document.getElementById('quizContainer').innerHTML = `
+    <div class="quiz-card" data-n="${qIdx+1}">
+      <div class="quiz-num">Domanda ${qIdx+1} di ${QUIZ_DATA.length}</div>
+      <div class="quiz-q">${q.q.replace(/\n/g, '<br>')}</div>
+      ${q.code ? `<div class="quiz-code">${q.q.split('\n').slice(1).join('\n')}</div>` : ''}
+      <div class="quiz-opts" id="qopts">${opts}</div>
+      <div class="quiz-fb" id="qfb"></div>
+      <div class="quiz-actions">
+        <button class="quiz-next" id="qnext" onclick="nextQ()">
+          ${qIdx === QUIZ_DATA.length - 1 ? 'Risultato →' : 'Prossima →'}
+        </button>
+        <span class="quiz-score-display" id="qsd">Punteggio: ${qScore}/${qIdx}</span>
+      </div>
+    </div>
+  `;
+}
+
+function answerQ(idx) {
+  if (qAnswered) return;
+  qAnswered = true;
+  const q = QUIZ_DATA[qIdx];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(o => o.disabled = true);
+  
+  const fb = document.getElementById('qfb');
+  if (idx === q.ans) {
+    qScore++;
+    opts[idx].classList.add('correct');
+    fb.className = 'quiz-fb show ok';
+    fb.textContent = '✓ Corretto! ' + q.fb;
+    notify('🎯', '+100 XP!');
+  } else {
+    opts[idx].classList.add('wrong');
+    opts[q.ans].classList.add('correct');
+    fb.className = 'quiz-fb show ko';
+    fb.textContent = '✗ Sbagliato. ' + q.fb;
+  }
+  
+  document.getElementById('qnext').style.display = 'inline-block';
+  document.getElementById('qsd').textContent = `Punteggio: ${qScore}/${qIdx+1}`;
+}
+
+function nextQ() {
+  qIdx++;
+  if (qIdx >= QUIZ_DATA.length) showResult();
+  else { renderQuizProgress(); renderQuestion(); }
+}
+
+function showResult() {
+  renderQuizProgress();
+  const pct = Math.round((qScore / QUIZ_DATA.length) * 100);
+  let msg = pct >= 80 ? '🔥 Impressionante!' : pct >= 60 ? '👍 Buono!' : '📚 Continua a studiare!';
+  let xp = qScore * 100;
+  
+  document.getElementById('quizContainer').innerHTML = `
+    <div class="quiz-result">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:.5rem">// RISULTATO FINALE</div>
+      <div class="result-score">${pct}%</div>
+      <div class="result-label">${qScore} / ${QUIZ_DATA.length} risposte corrette — ${msg}</div>
+      <div class="result-bars">
+        <div class="result-bar-cell">
+          <span class="rbc-num" style="color:var(--accent)">${qScore}</span>
+          <span class="rbc-lbl">Corrette</span>
+        </div>
+        <div class="result-bar-cell">
+          <span class="rbc-num" style="color:var(--danger)">${QUIZ_DATA.length - qScore}</span>
+          <span class="rbc-lbl">Errate</span>
+        </div>
+        <div class="result-bar-cell">
+          <span class="rbc-num" style="color:var(--accent3)">+${xp}</span>
+          <span class="rbc-lbl">XP Guadagnati</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;">
+        <button class="btn-hero" onclick="initQuiz()">↺ Riprova</button>
+        <button class="btn-hero2" onclick="showPage('curriculum')">📚 Curriculum →</button>
+        <button class="btn-hero2" onclick="showPage('ide')">▶ Apri IDE →</button>
+      </div>
+    </div>
+  `;
+  
+  // Update nav XP
+  const curXP = parseInt(document.getElementById('navXp').textContent.replace('⚡ ','').replace(' XP',''));
+  document.getElementById('navXp').textContent = `⚡ ${curXP + xp} XP`;
+}
+
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+function notify(icon, msg) {
+  const n = document.getElementById('notif');
+  document.getElementById('notifIcon').textContent = icon;
+  document.getElementById('notifMsg').textContent = msg;
+  n.classList.add('show');
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.classList.remove('show'), 2500);
+}
+
+function animateStats() {
+  function count(el, target, suffix='') {
+    let cur = 0;
+    const step = Math.ceil(target / 80);
+    const t = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = cur.toLocaleString('it') + suffix;
+      if (cur >= target) clearInterval(t);
+    }, 20);
+  }
+  setTimeout(() => {
+    count(document.getElementById('sn1'), 18432);
+    count(document.getElementById('sn2'), 342891);
+    count(document.getElementById('sn3'), 79204);
+  }, 300);
+}
+
+// Keyboard shortcut: Ctrl+Enter in IDE
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && document.getElementById('page-ide').classList.contains('active')) {
+    runCode();
+  }
+});
+</script>
+</body>
+</html>
